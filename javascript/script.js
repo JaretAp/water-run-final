@@ -24,6 +24,8 @@ const hudTimeEl = document.getElementById('hudTime');
 const hudJugsEl = document.getElementById('hudJugs');
 
 const instructionsEl = document.getElementById('instructions');
+const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
+const difficultyOptions = difficultyInputs ? Array.from(difficultyInputs) : [];
 
 const upZone   = document.getElementById('touchUpZone');
 const downZone = document.getElementById('touchDownZone');
@@ -38,11 +40,66 @@ canvas.width  = BASE_W;
 canvas.height = BASE_H;
 
 const TRACK_LEN  = 5200;
-const lanesX     = [BASE_W*0.22, BASE_W*0.50, BASE_W*0.78];
+const EDGE_MARGIN = 20;
+const LANE_COUNT = 3;
+const lanesX = Array.from({ length: LANE_COUNT }, (_, i) => {
+  if (LANE_COUNT === 1) return BASE_W / 2;
+  const usable = BASE_W - EDGE_MARGIN * 2;
+  const spacing = usable / (LANE_COUNT - 1);
+  return EDGE_MARGIN + i * spacing;
+});
+const laneSpacing = lanesX.length > 1 ? (lanesX[1] - lanesX[0]) : (BASE_W - EDGE_MARGIN * 2);
+const RUNNER_HALF_WIDTH = 18;
+const RUNNER_TOP_OFFSET = 40;
+const RUNNER_BOTTOM_OFFSET = 20;
+const OBSTACLE_PADDING = 6;
+const minRunnerX = EDGE_MARGIN;
+const maxRunnerX = BASE_W - EDGE_MARGIN;
+const DIFFICULTIES = {
+  easy: {
+    rowGap: [140, 190],
+    collectibleDensity: 2.6,
+    yellowWeight: 3,
+    blackWeight: 1,
+    obstacleSegments: [2, 3],
+    obstacleSize: { min: 0.15, max: 0.26, largeChance: 0.25 },
+    emptyFracMin: 0.30,
+    emptyFracMax: 0.50,
+    yellowPlusEmptyFracMin: 0.40,
+  },
+  normal: {
+    rowGap: [125, 175],
+    collectibleDensity: 2.1,
+    yellowWeight: 1,
+    blackWeight: 1,
+    obstacleSegments: [2, 4],
+    obstacleSize: { min: 0.18, max: 0.33, largeChance: 0.45 },
+    emptyFracMin: 0.20,
+    emptyFracMax: 0.35,
+    yellowPlusEmptyFracMin: 0.30,
+  },
+  hard: {
+    rowGap: [110, 165],
+    collectibleDensity: 1.6,
+    yellowWeight: 1,
+    blackWeight: 3,
+    obstacleSegments: [3, 5],
+    obstacleSize: { min: 0.22, max: 0.40, largeChance: 0.65 },
+    emptyFracMin: 0.10,
+    emptyFracMax: 0.20,
+    yellowPlusEmptyFracMin: 0.15,
+  },
+};
+const GRID_COLS = 20;
+const CELL_WIDTH = BASE_W / GRID_COLS;
+const BASE_OBSTACLE_MIN_FRAC = 0.15;
+const BASE_OBSTACLE_MAX_FRAC = 0.40;
 
-let lane     = 1;
+let runnerX  = lanesX[Math.floor(lanesX.length/2)] || BASE_W/2;
 let runnerY  = 80;
-const HOLD_SPEED = 140;
+const MOVE_SPEED = 168; // 20% faster movement
+let upHeld = false, downHeld = false, leftHeld = false, rightHeld = false;
+let difficulty = 'normal';
 
 let camY     = 0;
 
@@ -51,12 +108,55 @@ let lastTs   = 0;
 let playing  = false;
 let gameArmed = false;
 
-const jugs    = [];
-const hazards = [];
-let jugCount  = 0;
+const jugs      = [];
+const hazards   = [];
+const obstacles = [];
+let jugCount    = 0;
 
 /* Utils */
 const worldToScreenY = (y) => BASE_H - (y - camY);
+const clampRunnerX = (v) => Math.max(minRunnerX, Math.min(maxRunnerX, v));
+function getNearestLaneIndex(){
+  let nearest = 0;
+  let bestDist = Infinity;
+  for (let i=0; i<lanesX.length; i++){
+    const d = Math.abs(runnerX - lanesX[i]);
+    if (d < bestDist){
+      bestDist = d;
+      nearest = i;
+    }
+  }
+  return nearest;
+}
+function snapRunnerToLane(delta){
+  const next = Math.max(0, Math.min(lanesX.length - 1, getNearestLaneIndex() + delta));
+  runnerX = lanesX[next];
+}
+const runnerIntersectsObstacle = (rX, rY, ob) => {
+  const runnerLeft = rX - RUNNER_HALF_WIDTH;
+  const runnerRight = rX + RUNNER_HALF_WIDTH;
+  const runnerTop = rY - RUNNER_TOP_OFFSET;
+  const runnerBottom = rY + RUNNER_BOTTOM_OFFSET;
+  const obLeft = ob.x - ob.w/2 + OBSTACLE_PADDING;
+  const obRight = ob.x + ob.w/2 - OBSTACLE_PADDING;
+  const obTop = ob.y - ob.h/2 + OBSTACLE_PADDING;
+  const obBottom = ob.y + ob.h/2 - OBSTACLE_PADDING;
+  return !(runnerRight < obLeft || runnerLeft > obRight || runnerBottom < obTop || runnerTop > obBottom);
+};
+function applyDifficultySelection(){
+  const selected = document.querySelector('input[name="difficulty"]:checked');
+  if (selected) difficulty = selected.value;
+}
+if (difficultyOptions.length){
+  applyDifficultySelection();
+  difficultyOptions.forEach((input) => {
+    input.addEventListener('change', () => {
+      difficulty = input.value;
+      resetGame();
+      showScreen(screenStart);
+    });
+  });
+}
 
 function showScreen(el){
   [screenStart, screenGame, screenOver].forEach(s => s && s.classList.remove('show'));
@@ -98,18 +198,364 @@ let imgJugBlack  = null;
 function genWorld(){
   jugs.length = 0;
   hazards.length = 0;
+  obstacles.length = 0;
   jugCount = 0;
 
-  let y = 300;
-  while (y < TRACK_LEN - 300){
-    if (Math.random() < 0.6){
-      jugs.push({ x: lanesX[Math.floor(Math.random()*3)], y });
-    }
-    if (Math.random() < 0.45){
-      hazards.push({ x: lanesX[Math.floor(Math.random()*3)], y, w: 46, h: 26 });
-    }
-    y += 220 + Math.random()*80;
+  const cfg = DIFFICULTIES[difficulty] || DIFFICULTIES.normal;
+  const rows = [];
+  const minGap = cfg.rowGap[0];
+  const gapRange = Math.max(0, cfg.rowGap[1] - cfg.rowGap[0]);
+  let y = 260;
+  while (y < TRACK_LEN - 220){
+    rows.push(y);
+    y += minGap + Math.random() * gapRange;
   }
+  if (!rows.length) return;
+
+  const prevObstacleCols = new Set();
+  const straightSafeCounts = Array(GRID_COLS).fill(0);
+  const rowsMeta = [];
+  let forcedBlack = 0;
+
+  rows.forEach((rowY, rowIndex) => {
+    const meta = buildRowLayout({
+      rowIndex,
+      rowY,
+      cfg,
+      prevObstacleCols,
+      straightSafeCounts,
+    });
+    forcedBlack += meta.forcedHazards;
+    rowsMeta.push(meta);
+  });
+
+  const slotPool = [];
+  rowsMeta.forEach((rowMeta, rowIndex) => {
+    rowMeta.collectibleCols.forEach((col) => {
+      slotPool.push({ rowIndex, col });
+    });
+  });
+
+  const totalWeight = cfg.yellowWeight + cfg.blackWeight;
+  const targetBlack = Math.max(
+    forcedBlack,
+    Math.round((cfg.blackWeight / totalWeight) * (slotPool.length + forcedBlack))
+  );
+  let remainingBlack = Math.max(0, targetBlack - forcedBlack);
+
+  shuffleArray(slotPool);
+
+  for (const slot of slotPool){
+    if (remainingBlack <= 0) break;
+    const rowMeta = rowsMeta[slot.rowIndex];
+    if (!rowMeta.collectibleCols.has(slot.col)) continue;
+    const remainingCollectible = rowMeta.collectibleCols.size - 1;
+    const afterHazardYellowEmpty = rowMeta.reservedEmptyCount + remainingCollectible;
+    if (afterHazardYellowEmpty < rowMeta.minYellowPlusEmptyCols) continue;
+    rowMeta.cells[slot.col] = 'hazard';
+    rowMeta.collectibleCols.delete(slot.col);
+    remainingBlack--;
+  }
+
+  if (remainingBlack > 0){
+    const fallbackSlots = [];
+    rowsMeta.forEach((rowMeta, rowIndex) => {
+      rowMeta.collectibleCols.forEach((col) => fallbackSlots.push({ rowIndex, col }));
+    });
+    shuffleArray(fallbackSlots);
+    for (const slot of fallbackSlots){
+      if (remainingBlack <= 0) break;
+      const rowMeta = rowsMeta[slot.rowIndex];
+      if (!rowMeta.collectibleCols.has(slot.col)) continue;
+      const remainingCollectible = rowMeta.collectibleCols.size - 1;
+      if (rowMeta.reservedEmptyCount + remainingCollectible < rowMeta.minYellowPlusEmptyCols) continue;
+      rowMeta.cells[slot.col] = 'hazard';
+      rowMeta.collectibleCols.delete(slot.col);
+      remainingBlack -= 1;
+    }
+  }
+
+  rowsMeta.forEach((rowMeta) => {
+    for (const col of Array.from(rowMeta.collectibleCols)){
+      rowMeta.cells[col] = 'yellow';
+      rowMeta.collectibleCols.delete(col);
+    }
+  });
+
+  rowsMeta.forEach((rowMeta) => {
+    const cells = rowMeta.cells;
+    let col = 0;
+    while (col < GRID_COLS){
+      if (cells[col] === 'obstacle'){
+        let end = col;
+        while (end + 1 < GRID_COLS && cells[end + 1] === 'obstacle'){
+          end++;
+        }
+        const startPixel = col * CELL_WIDTH;
+        const endPixel = (end + 1) * CELL_WIDTH;
+        const widthPx = endPixel - startPixel;
+        const x = startPixel + widthPx / 2;
+        obstacles.push({ x, y: rowMeta.y, w: widthPx, h: 52 });
+        col = end + 1;
+        continue;
+      }
+      if (cells[col] === 'hazard'){
+        const x = col * CELL_WIDTH + CELL_WIDTH / 2;
+        hazards.push({ x, y: rowMeta.y, w: 46, h: 26 });
+      } else if (cells[col] === 'yellow'){
+        const x = col * CELL_WIDTH + CELL_WIDTH / 2;
+        jugs.push({ x, y: rowMeta.y });
+      }
+      col += 1;
+    }
+  });
+}
+
+function buildRowLayout({ rowIndex, rowY, cfg, prevObstacleCols, straightSafeCounts }){
+  const minEmptyCols = Math.max(1, Math.round(GRID_COLS * cfg.emptyFracMin));
+  const maxEmptyCols = Math.max(minEmptyCols, Math.round(GRID_COLS * cfg.emptyFracMax));
+  const minYellowPlusEmptyBase = Math.round(GRID_COLS * cfg.yellowPlusEmptyFracMin);
+  const cells = Array(GRID_COLS).fill('empty');
+  const obstacleCols = new Set();
+  const obstacleSegments = [];
+  let forcedHazards = 0;
+
+  placeObstacleSegments({
+    cells,
+    cfg,
+    minEmptyCols,
+    prevObstacleCols,
+    obstacleSegments,
+    obstacleCols,
+  });
+
+  let clearCount = cells.filter((cell) => cell === 'empty').length;
+  for (let col = 0; col < GRID_COLS; col++){
+    if (cells[col] === 'empty'){
+      straightSafeCounts[col] += 1;
+      if (straightSafeCounts[col] > 3){
+        if (clearCount - 1 >= minEmptyCols){
+          cells[col] = 'hazard';
+          clearCount -= 1;
+          forcedHazards += 1;
+          straightSafeCounts[col] = 0;
+        } else if (shrinkObstacleForClear({
+          cells,
+          obstacleSegments,
+          obstacleCols,
+          prevObstacleCols,
+          minEmptyCols,
+        })){
+          clearCount = cells.filter((cell) => cell === 'empty').length;
+          if (clearCount - 1 >= minEmptyCols){
+            cells[col] = 'hazard';
+            clearCount -= 1;
+            forcedHazards += 1;
+            straightSafeCounts[col] = 0;
+          } else {
+            straightSafeCounts[col] = 3;
+          }
+        } else {
+          straightSafeCounts[col] = 3;
+        }
+      }
+    } else {
+      straightSafeCounts[col] = 0;
+    }
+  }
+
+  clearCount = cells.filter((cell) => cell === 'empty').length;
+  if (clearCount > maxEmptyCols){
+    const empties = [];
+    for (let col = 0; col < GRID_COLS; col++){
+      if (cells[col] === 'empty') empties.push(col);
+    }
+    shuffleArray(empties);
+    const toConvert = clearCount - maxEmptyCols;
+    for (let i = 0; i < toConvert; i++){
+      const col = empties[i];
+      cells[col] = 'hazard';
+      forcedHazards += 1;
+      straightSafeCounts[col] = 0;
+    }
+    clearCount = maxEmptyCols;
+  }
+
+  const emptyCols = [];
+  for (let col = 0; col < GRID_COLS; col++){
+    if (cells[col] === 'empty') emptyCols.push(col);
+  }
+  shuffleArray(emptyCols);
+  const reserveMax = Math.min(emptyCols.length, maxEmptyCols);
+  const reserveMin = Math.min(emptyCols.length, minEmptyCols);
+  let reserveCount = reserveMax;
+  if (reserveMax > reserveMin){
+    reserveCount = randomInt(reserveMin, reserveMax);
+  }
+  const reservedSet = new Set(emptyCols.slice(0, reserveCount));
+  const collectibleSet = new Set(emptyCols.slice(reserveCount));
+  const reservedEmptyCount = reservedSet.size;
+  const collectibleCount = collectibleSet.size;
+  const minYellowPlusEmptyCols = Math.min(
+    reservedEmptyCount + collectibleCount,
+    Math.max(reservedEmptyCount, minYellowPlusEmptyBase)
+  );
+
+  prevObstacleCols.clear();
+  obstacleCols.forEach((col) => prevObstacleCols.add(col));
+
+  return {
+    y: rowY,
+    cells,
+    reservedEmptyCount,
+    minEmptyCols,
+    maxEmptyCols,
+    minYellowPlusEmptyCols,
+    collectibleCols: collectibleSet,
+    forcedHazards,
+  };
+}
+
+function placeObstacleSegments({ cells, cfg, minEmptyCols, prevObstacleCols, obstacleSegments, obstacleCols }){
+  const segmentsTarget = randomInt(cfg.obstacleSegments[0], cfg.obstacleSegments[1]);
+  const minCols = Math.max(1, Math.round(GRID_COLS * Math.max(BASE_OBSTACLE_MIN_FRAC, cfg.obstacleSize.min)));
+  const maxCols = Math.max(minCols, Math.round(GRID_COLS * Math.min(BASE_OBSTACLE_MAX_FRAC, cfg.obstacleSize.max)));
+  let segmentsPlaced = 0;
+  let attempts = 0;
+  while (segmentsPlaced < segmentsTarget && attempts < 120){
+    attempts++;
+    let widthCols = chooseObstacleWidth({ minCols, maxCols, cfg });
+    widthCols = Math.min(widthCols, GRID_COLS - 1);
+    let candidate = null;
+    let selectedWidth = widthCols;
+    for (let size = Math.min(widthCols, maxCols); size >= minCols; size--){
+      candidate = findObstacleSlot({ cells, widthCols: size, minEmptyCols, prevObstacleCols });
+      if (candidate){
+        selectedWidth = size;
+        break;
+      }
+    }
+    if (!candidate) continue;
+    applyObstacleSegment({ cells, start: candidate.start, widthCols: selectedWidth, obstacleSegments, obstacleCols });
+    segmentsPlaced += 1;
+  }
+
+  if (segmentsPlaced < cfg.obstacleSegments[0]){
+    // fallback: add minimal segments ignoring previous overlap to guarantee requirement
+    const missing = cfg.obstacleSegments[0] - segmentsPlaced;
+    for (let i = 0; i < missing; i++){
+      const candidate = findObstacleSlot({ cells, widthCols: minCols, minEmptyCols, prevObstacleCols, force:true });
+      if (!candidate) break;
+      applyObstacleSegment({ cells, start: candidate.start, widthCols: minCols, obstacleSegments, obstacleCols });
+    }
+  }
+
+  let currentClear = cells.filter((cell) => cell === 'empty').length;
+  let guard = 0;
+  while (currentClear < minEmptyCols && guard < 10){
+    guard++;
+    if (!shrinkObstacleForClear({ cells, obstacleSegments, obstacleCols, prevObstacleCols, minEmptyCols })){
+      break;
+    }
+    currentClear = cells.filter((cell) => cell === 'empty').length;
+  }
+}
+
+function chooseObstacleWidth({ minCols, maxCols, cfg }){
+  if (minCols === maxCols) return minCols;
+  const largeRangeStart = Math.max(minCols, Math.floor(maxCols * 0.75));
+  if (Math.random() < cfg.obstacleSize.largeChance){
+    return randomInt(largeRangeStart, maxCols);
+  }
+  return randomInt(minCols, Math.max(minCols, Math.round((minCols + maxCols) / 2)));
+}
+
+function findObstacleSlot({ cells, widthCols, minEmptyCols, prevObstacleCols, force }){
+  const currentClear = cells.filter((cell) => cell === 'empty').length;
+  const candidates = [];
+  for (let start = 0; start <= GRID_COLS - widthCols; start++){
+    let fits = true;
+    for (let col = start; col < start + widthCols; col++){
+      if (cells[col] !== 'empty'){
+        fits = false;
+        break;
+      }
+      if (prevObstacleCols.has(col)){
+        fits = false;
+        break;
+      }
+    }
+    if (!fits) continue;
+    if (start > 0 && cells[start - 1] === 'obstacle') continue;
+    if (start + widthCols < GRID_COLS && cells[start + widthCols] === 'obstacle') continue;
+    const remainingClear = currentClear - widthCols;
+    if (!force && remainingClear < minEmptyCols) continue;
+    candidates.push({ start });
+  }
+  if (!candidates.length) return null;
+  const edgeCandidates = candidates.filter((c) => c.start === 0 || c.start + widthCols === GRID_COLS);
+  if (edgeCandidates.length){
+    return edgeCandidates[Math.floor(Math.random() * edgeCandidates.length)];
+  }
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
+function applyObstacleSegment({ cells, start, widthCols, obstacleSegments, obstacleCols }){
+  for (let col = start; col < start + widthCols; col++){
+    cells[col] = 'obstacle';
+    obstacleCols.add(col);
+  }
+  obstacleSegments.push({ start, end: start + widthCols - 1 });
+}
+
+function shrinkObstacleForClear({ cells, obstacleSegments, obstacleCols, prevObstacleCols, minEmptyCols }){
+  const minCols = Math.max(1, Math.round(GRID_COLS * BASE_OBSTACLE_MIN_FRAC));
+  obstacleSegments.sort((a, b) => (b.end - b.start) - (a.end - a.start));
+  for (const segment of obstacleSegments){
+    const length = segment.end - segment.start + 1;
+    if (length <= minCols) continue;
+    // try removing one column from left or right that doesn't collide with prev obstacles
+    const leftCol = segment.start;
+    const rightCol = segment.end;
+    const options = [];
+    if (!prevObstacleCols.has(leftCol)){
+      options.push({ removeCol: leftCol, direction: 'left' });
+    }
+    if (!prevObstacleCols.has(rightCol)){
+      options.push({ removeCol: rightCol, direction: 'right' });
+    }
+    if (!options.length){
+      options.push({ removeCol: leftCol, direction: 'left' });
+    }
+    const choice = options[Math.floor(Math.random() * options.length)];
+    cells[choice.removeCol] = 'empty';
+    obstacleCols.delete(choice.removeCol);
+    if (choice.direction === 'left'){
+      segment.start += 1;
+    } else {
+      segment.end -= 1;
+    }
+    if (segment.end < segment.start){
+      const index = obstacleSegments.indexOf(segment);
+      if (index >= 0){
+        obstacleSegments.splice(index, 1);
+      }
+    }
+    return cells.filter((cell) => cell === 'empty').length >= minEmptyCols;
+  }
+  return false;
+}
+
+function shuffleArray(arr){
+  for (let i = arr.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function randomInt(min, max){
+  if (max < min) return min;
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 /* Drawing */
@@ -135,7 +581,7 @@ function drawBackground(ts){
   }
 }
 function drawRunner(){
-  const x = lanesX[lane];
+  const x = runnerX;
   const yS = worldToScreenY(runnerY);
   ctx.fillStyle = '#60a5fa';
   ctx.fillRect(x - 18, yS - 32, 36, 52);
@@ -171,16 +617,28 @@ function drawHazard(it){
   }
   ctx.drawImage(imgJugBlack, it.x - SPRITE_W/2, yS - SPRITE_H/2, SPRITE_W, SPRITE_H);
 }
+function drawObstacle(it){
+  const yS = worldToScreenY(it.y);
+  ctx.save();
+  ctx.translate(it.x, yS);
+  ctx.fillStyle = '#3f2d20';
+  ctx.strokeStyle = '#d97706';
+  ctx.lineWidth = 3;
+  ctx.fillRect(-it.w/2, -it.h/2, it.w, it.h);
+  ctx.strokeRect(-it.w/2, -it.h/2, it.w, it.h);
+  ctx.restore();
+}
 
 /* Game Flow */
 function resetGame(){
   playing = false;
   gameArmed = false;
   elapsed = 0;
-  lane = 1;
+  runnerX = lanesX[Math.floor(lanesX.length/2)] || BASE_W/2;
   runnerY = 80;
   camY = 0;
   lastTs = 0;
+  upHeld = downHeld = leftHeld = rightHeld = false;
 
   setHudTime(0);
   setHudJugs(0);
@@ -215,6 +673,7 @@ function startGame(){
   drawBackground(0);
   for (const j of jugs) drawJug(j);
   for (const h of hazards) drawHazard(h);
+  for (const o of obstacles) drawObstacle(o);
   drawRunner();
 }
 function finish(){
@@ -240,14 +699,43 @@ function celebrate(){
 }
 
 /* Loop */
-let upHeld=false, downHeld=false;
 function loop(ts){
   const dt = Math.min(48, ts - (lastTs || ts));
   const dtSec = dt/1000;
   lastTs = ts;
 
-  if (upHeld)   runnerY += HOLD_SPEED * dtSec;
-  if (downHeld) runnerY  = Math.max(80, runnerY - HOLD_SPEED * dtSec);
+  const prevRunnerX = runnerX;
+  const prevRunnerY = runnerY;
+  if (upHeld)    runnerY += MOVE_SPEED * dtSec;
+  if (downHeld)  runnerY  = Math.max(80, runnerY - MOVE_SPEED * dtSec);
+  if (leftHeld)  runnerX  = clampRunnerX(runnerX - MOVE_SPEED * dtSec);
+  if (rightHeld) runnerX  = clampRunnerX(runnerX + MOVE_SPEED * dtSec);
+
+  for (const ob of obstacles){
+    if (!runnerIntersectsObstacle(runnerX, runnerY, ob)) continue;
+
+    if (runnerY !== prevRunnerY){
+      const candidateY = prevRunnerY;
+      if (!runnerIntersectsObstacle(runnerX, candidateY, ob)){
+        runnerY = candidateY;
+        continue;
+      }
+      runnerY = candidateY;
+    }
+
+    if (runnerX !== prevRunnerX){
+      const candidateX = prevRunnerX;
+      if (!runnerIntersectsObstacle(candidateX, runnerY, ob)){
+        runnerX = candidateX;
+        continue;
+      }
+      runnerX = candidateX;
+    }
+
+    runnerX = prevRunnerX;
+    runnerY = prevRunnerY;
+    break;
+  }
 
   camY = Math.max(camY, runnerY - 0.68 * BASE_H);
 
@@ -258,13 +746,14 @@ function loop(ts){
   drawBackground(ts);
   for (const j of jugs)    drawJug(j);
   for (const h of hazards) drawHazard(h);
+  for (const o of obstacles) drawObstacle(o);
 
-  const laneX = lanesX[lane];
+  const runnerXNow = runnerX;
   const rY = runnerY;
 
   for (let i=jugs.length-1; i>=0; i--){
     const it = jugs[i];
-    if (Math.abs(it.x - laneX) < 28 && Math.abs(it.y - rY) < 42){
+    if (Math.abs(it.x - runnerXNow) < 28 && Math.abs(it.y - rY) < 42){
       jugs.splice(i,1);
       jugCount++; setHudJugs(jugCount);
       elapsed = Math.max(0, elapsed - 2); setHudTime(elapsed);
@@ -274,7 +763,7 @@ function loop(ts){
   for (let i=hazards.length-1; i>=0; i--){
     const it = hazards[i];
     const top = it.y - it.h/2, bottom = it.y + it.h/2;
-    const overlapLane = Math.abs(it.x - laneX) < (it.w * 0.6);
+    const overlapLane = Math.abs(it.x - runnerXNow) < (it.w * 0.6);
     const overlapY = !((rY - 40) > bottom || (rY + 20) < top);
     if (overlapLane && overlapY){
       hazards.splice(i,1);
@@ -299,20 +788,24 @@ window.addEventListener('keydown', (e) => {
     lastTs = 0;
     if (e.key === 'ArrowUp')   upHeld = true;
     if (e.key === 'ArrowDown') downHeld = true;
+    if (e.key === 'ArrowLeft') leftHeld = true;
+    if (e.key === 'ArrowRight') rightHeld = true;
     if (instructionsEl) instructionsEl.classList.add('hidden');
     requestAnimationFrame(loop);
   }
 
   if (!playing) return;
 
-  if (e.key === 'ArrowLeft')  lane = Math.max(0, lane - 1);
-  if (e.key === 'ArrowRight') lane = Math.min(2, lane + 1);
   if (e.key === 'ArrowUp')    upHeld = true;
   if (e.key === 'ArrowDown')  downHeld = true;
+  if (e.key === 'ArrowLeft')  leftHeld = true;
+  if (e.key === 'ArrowRight') rightHeld = true;
 });
 window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowUp')    upHeld = false;
   if (e.key === 'ArrowDown')  downHeld = false;
+  if (e.key === 'ArrowLeft')  leftHeld = false;
+  if (e.key === 'ArrowRight') rightHeld = false;
 });
 
 /* Touch (swipe lanes only) */
@@ -333,8 +826,8 @@ canvas.addEventListener('touchend', (e) => {
   if (!playing || touchSX==null || touchSY==null) { touchSX=touchSY=null; return; }
   const t  = e.changedTouches[0];
   const dx = t.clientX - touchSX;
-  if (dx < -20) lane = Math.max(0, lane - 1);
-  if (dx >  20) lane = Math.min(2, lane + 1);
+  if (dx < -20) snapRunnerToLane(-1);
+  if (dx >  20) snapRunnerToLane(1);
   touchSX = touchSY = null;
   e.preventDefault();
 }, { passive:false });

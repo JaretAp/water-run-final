@@ -4,9 +4,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Water Run — charity: water</title>
-  <link rel="stylesheet" href="css/style.css?v=5" />
-  <link rel="stylesheet" href="css/theme.css?v=5" />
+  <title>Water Run - charity: water</title>
+  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/theme.css?v=6" />
 </head>
 
 <body>
@@ -14,7 +14,22 @@
   <section id="screen-start" class="screen show">
     <div class="panel">
       <h1>Water Run</h1>
-      <p class="tagline">Race to the finish. Collect yellow jugs to reduce time. Avoid hazards that add time.</p>
+      <p class="tagline">Choose a challenge, dodge obstacles, and race to the finish. Yellow jugs help, black jugs hurt.</p>
+      <fieldset id="difficultyPicker" class="difficulty-picker">
+        <legend>Select difficulty</legend>
+        <label class="difficulty-option">
+          <input type="radio" name="difficulty" value="easy">
+          <span>Easy</span>
+        </label>
+        <label class="difficulty-option">
+          <input type="radio" name="difficulty" value="normal" checked>
+          <span>Normal</span>
+        </label>
+        <label class="difficulty-option">
+          <input type="radio" name="difficulty" value="hard">
+          <span>Hard</span>
+        </label>
+      </fieldset>
       <button id="btnStart" class="btn">Start Game!</button>
     </div>
   </section>
@@ -45,7 +60,8 @@
         <p><strong>Use Arrow Keys</strong> to move left, right, up, and down.</p>
         <p>Collect <img src="assets/jerry_jug_yellow.svg" alt="Yellow jug" class="jug-icon jug-yellow"> to reduce time.
         </p>
-        <p>Avoid <img src="assets/jerry_jug-black.svg" alt="Black jug" class="jug-icon jug-black"> — they add time.</p>
+        <p>Avoid <img src="assets/jerry_jug-black.svg" alt="Black jug" class="jug-icon jug-black"> â€” they add time.</p>
+        <p>Blocked barricades force you to weave into another lane.</p>
         <p>Press any arrow key to <strong>start</strong> the run!</p>
       </div>
     </div>
@@ -66,7 +82,7 @@
     <small>Prototype aligned to your Water Run concept.</small>
   </footer>
 
-  <script src="javascript/script.js?v=5"></script>
+  <script src="javascript/script.js?v=6"></script>
 </body>
 
 </html>
