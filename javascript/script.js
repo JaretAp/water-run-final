@@ -15,6 +15,7 @@ const screenOver  = document.getElementById('screen-over');
 const btnStart     = document.getElementById('btnStart');
 const btnReset     = document.getElementById('btnReset');
 const btnPlayAgain = document.getElementById('btnPlayAgain');
+const btnResetInGame = document.getElementById('btnResetInGame');
 
 const finalTimeEl  = document.getElementById('finalTime');
 const toast        = document.getElementById('toast');
@@ -118,8 +119,8 @@ function drawBackground(ts){
     BASE_W*0.5, BASE_H*0.1, 40 + 30*Math.sin(t),
     BASE_W*0.5, BASE_H*0.85, BASE_H*0.95
   );
-  g.addColorStop(0, '#0b2140');
-  g.addColorStop(1, '#081523');
+  g.addColorStop(0, '#2e8f39');
+  g.addColorStop(1, '#0f4d1f');
   ctx.fillStyle = g;
   ctx.fillRect(0,0,BASE_W,BASE_H);
 
@@ -267,7 +268,7 @@ function loop(ts){
       jugs.splice(i,1);
       jugCount++; setHudJugs(jugCount);
       elapsed = Math.max(0, elapsed - 2); setHudTime(elapsed);
-      flash('−2.00s', '#22c55e');
+      flash('-2.00s', '#22c55e');
     }
   }
   for (let i=hazards.length-1; i>=0; i--){
