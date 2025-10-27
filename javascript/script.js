@@ -26,6 +26,7 @@ const hudJugsEl = document.getElementById('hudJugs');
 const instructionsEl = document.getElementById('instructions');
 const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
 const difficultyOptions = difficultyInputs ? Array.from(difficultyInputs) : [];
+let difficulty = 'normal';
 
 const upZone   = document.getElementById('touchUpZone');
 const downZone = document.getElementById('touchDownZone');
@@ -94,37 +95,29 @@ const GRID_COLS = 12;
 const CELL_WIDTH = BASE_W / GRID_COLS;
 const BASE_OBSTACLE_MIN_FRAC = 0.15;
 const BASE_OBSTACLE_MAX_FRAC = 0.40;
-const EASY_ROW_SPACING = 160;
+const EASY_ROW_SPACING = 125;
 const EASY_START_Y = 320;
 const EASY_PATTERN = [
   {
-    obstacles: [{ start: 2, width: 8 }],
+    obstacles: [{ start: 3, width: 6 }],
     hazards: [1, 10],
-    yellows: [],
+    yellows: [5],
   },
-  { obstacles: [], hazards: [], yellows: [] },
-  { obstacles: [], hazards: [], yellows: [5] },
   {
     obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
-    hazards: [6],
-    yellows: [4],
-  },
-  { obstacles: [], hazards: [], yellows: [] },
-  { obstacles: [], hazards: [], yellows: [] },
-  {
-    obstacles: [{ start: 2, width: 8 }],
-    hazards: [],
+    hazards: [4, 7],
     yellows: [1, 10],
   },
-  { obstacles: [], hazards: [], yellows: [] },
-  { obstacles: [], hazards: [], yellows: [5] },
+  {
+    obstacles: [{ start: 3, width: 6 }],
+    hazards: [5],
+    yellows: [1, 10],
+  },
   {
     obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
     hazards: [4, 7],
     yellows: [5],
   },
-  { obstacles: [], hazards: [], yellows: [] },
-  { obstacles: [], hazards: [], yellows: [] },
 ];
 
 function addObstacleCells(startCol, widthCols, y){
@@ -148,9 +141,8 @@ function addYellowCell(col, y){
 
 let runnerX  = lanesX[Math.floor(lanesX.length/2)] || BASE_W/2;
 let runnerY  = 80;
-const MOVE_SPEED = 168; // 20% faster movement
+const MOVE_SPEED = 252; // 20% faster movement
 let upHeld = false, downHeld = false, leftHeld = false, rightHeld = false;
-let difficulty = 'normal';
 
 let camY     = 0;
 
@@ -726,6 +718,10 @@ function drawObstacle(it){
 
 /* Game Flow */
 function resetGame(){
+  if (difficultyOptions.length){
+    const selected = difficultyOptions.find((input) => input.checked);
+    if (selected) difficulty = selected.value;
+  }
   playing = false;
   gameArmed = false;
   elapsed = 0;
@@ -755,6 +751,10 @@ function beginIfArmedAndTouch(direction /* 'up'|'down'|null */) {
 
 
 function startGame(){
+  if (difficultyOptions.length){
+    const selected = difficultyOptions.find((input) => input.checked);
+    if (selected) difficulty = selected.value;
+  }
   resetGame();
   showScreen(screenGame);
 
@@ -851,8 +851,8 @@ function loop(ts){
     if (Math.abs(it.x - runnerXNow) < 28 && Math.abs(it.y - rY) < 42){
       jugs.splice(i,1);
       jugCount++; setHudJugs(jugCount);
-      elapsed = Math.max(0, elapsed - 2); setHudTime(elapsed);
-      flash('-2.00s', '#22c55e');
+      elapsed = Math.max(0, elapsed - 3); setHudTime(elapsed);
+      flash('-3.00s', '#22c55e');
     }
   }
   for (let i=hazards.length-1; i>=0; i--){
@@ -862,8 +862,8 @@ function loop(ts){
     const overlapY = !((rY - 40) > bottom || (rY + 20) < top);
     if (overlapLane && overlapY){
       hazards.splice(i,1);
-      elapsed += 2; setHudTime(elapsed);
-      flash('+2.00s', '#ef4444');
+      elapsed += 4; setHudTime(elapsed);
+      flash('+4.00s', '#ef4444');
     }
   }
 
@@ -971,3 +971,4 @@ btnResetInGame && btnResetInGame.addEventListener('click', () => {
   setHudTime(0); setHudJugs(0);
   genWorld();
 })();
+
