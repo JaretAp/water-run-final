@@ -112,26 +112,103 @@ const EASY_PATTERN = [
 
 const NORMAL_ROW_SPACING = 110;
 const NORMAL_START_Y = 300;
+const NORMAL_HALF_SPACING = NORMAL_ROW_SPACING / 2;
 const NORMAL_PATTERN = [
-  {
+  { // Row A1
     obstacles: [{ start: 2, width: 3 }, { start: 7, width: 3 }, { start: 11, width: 1 }],
-    hazards: [1, 6],
+    hazards: [0, 1, 6, 10],
     yellows: [5],
+    spacing: NORMAL_HALF_SPACING,
   },
-  {
+  { // Row A1 spacer
+    obstacles: [],
+    hazards: [8],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row B1
     obstacles: [{ start: 0, width: 1 }, { start: 3, width: 5 }, { start: 10, width: 2 }],
     hazards: [2, 9],
-    yellows: [1, 8],
+    yellows: [7],
+    spacing: NORMAL_HALF_SPACING,
   },
-  {
+  { // Row B1 spacer
+    obstacles: [],
+    hazards: [6],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row C1
     obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
-    hazards: [4],
+    hazards: [4, 7],
     yellows: [6],
+    spacing: NORMAL_HALF_SPACING,
   },
-  {
+  { // Row C1 spacer
+    obstacles: [],
+    hazards: [8],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row D1
     obstacles: [{ start: 0, width: 1 }, { start: 3, width: 7 }],
     hazards: [1, 10],
     yellows: [2, 9],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Cycle spacer
+    obstacles: [],
+    hazards: [0, 6, 8],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row A2
+    obstacles: [{ start: 2, width: 3 }, { start: 7, width: 3 }, { start: 11, width: 1 }],
+    hazards: [1, 6],
+    yellows: [5],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row A2 spacer
+    obstacles: [],
+    hazards: [0, 9],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row B2
+    obstacles: [{ start: 0, width: 1 }, { start: 3, width: 5 }, { start: 10, width: 2 }],
+    hazards: [1, 2, 9],
+    yellows: [7],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row B2 spacer
+    obstacles: [],
+    hazards: [0, 3, 5, 9],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row C2 (same as C1)
+    obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
+    hazards: [4, 7],
+    yellows: [6],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row C2 spacer
+    obstacles: [],
+    hazards: [2],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Row D2 (same as D1)
+    obstacles: [{ start: 0, width: 1 }, { start: 3, width: 7 }],
+    hazards: [1, 10],
+    yellows: [2, 9],
+    spacing: NORMAL_HALF_SPACING,
+  },
+  { // Cycle spacer
+    obstacles: [],
+    hazards: [0, 6, 8],
+    yellows: [],
+    spacing: NORMAL_HALF_SPACING,
   },
 ];
 
@@ -260,7 +337,7 @@ function buildEasyStaticWorld(){
 }
 
 function buildNormalStaticWorld(){
-  buildStaticPattern(NORMAL_PATTERN, NORMAL_START_Y, NORMAL_ROW_SPACING, NORMAL_PATTERN.length - 1);
+  buildStaticPattern(NORMAL_PATTERN, NORMAL_START_Y, NORMAL_ROW_SPACING, NORMAL_PATTERN.length - 2);
 }
 
 function buildStaticPattern(pattern, startY, spacing, finalRowIndex){
@@ -275,12 +352,14 @@ function buildStaticPattern(pattern, startY, spacing, finalRowIndex){
     if (def.obstacles && def.obstacles.length){
       lastObstacleY = y;
     }
+    const step = def.spacing ?? spacing;
     index++;
-    y += spacing;
+    y += step;
   }
   if (TRACK_LEN - lastObstacleY > spacing){
-    const finalY = TRACK_LEN - spacing;
     const finalDef = pattern[(finalRowIndex ?? 0) % patternLen];
+    const finalStep = finalDef.spacing ?? spacing;
+    const finalY = TRACK_LEN - finalStep;
     placePatternRow(finalDef, finalY);
   }
 }
@@ -1003,5 +1082,8 @@ btnResetInGame && btnResetInGame.addEventListener('click', () => {
   setHudTime(0); setHudJugs(0);
   genWorld();
 })();
+
+
+
 
 
