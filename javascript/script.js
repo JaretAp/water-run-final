@@ -27,6 +27,7 @@ const instructionsEl = document.getElementById('instructions');
 const difficultyInputs = document.querySelectorAll('input[name="difficulty"]');
 const difficultyOptions = difficultyInputs ? Array.from(difficultyInputs) : [];
 let difficulty = 'normal';
+let difficultyLocked = false;
 
 const upZone   = document.getElementById('touchUpZone');
 const downZone = document.getElementById('touchDownZone');
@@ -68,17 +69,6 @@ const DIFFICULTIES = {
     emptyFracMax: 0.50,
     yellowPlusEmptyFracMin: 0.40,
   },
-  normal: {
-    rowGap: [125, 175],
-    collectibleDensity: 2.1,
-    yellowWeight: 1,
-    blackWeight: 1,
-    obstacleSegments: [2, 4],
-    obstacleSize: { min: 0.18, max: 0.33, largeChance: 0.45 },
-    emptyFracMin: 0.20,
-    emptyFracMax: 0.35,
-    yellowPlusEmptyFracMin: 0.30,
-  },
   hard: {
     rowGap: [110, 165],
     collectibleDensity: 1.6,
@@ -117,6 +107,31 @@ const EASY_PATTERN = [
     obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
     hazards: [4, 7],
     yellows: [5],
+  },
+];
+
+const NORMAL_ROW_SPACING = 110;
+const NORMAL_START_Y = 300;
+const NORMAL_PATTERN = [
+  {
+    obstacles: [{ start: 2, width: 3 }, { start: 7, width: 3 }, { start: 11, width: 1 }],
+    hazards: [1, 6],
+    yellows: [5],
+  },
+  {
+    obstacles: [{ start: 0, width: 1 }, { start: 3, width: 5 }, { start: 10, width: 2 }],
+    hazards: [2, 9],
+    yellows: [1, 8],
+  },
+  {
+    obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
+    hazards: [4],
+    yellows: [6],
+  },
+  {
+    obstacles: [{ start: 0, width: 1 }, { start: 3, width: 7 }],
+    hazards: [1, 10],
+    yellows: [2, 9],
   },
 ];
 
@@ -194,6 +209,7 @@ if (difficultyOptions.length){
   applyDifficultySelection();
   difficultyOptions.forEach((input) => {
     input.addEventListener('change', () => {
+      if (difficultyLocked) return;
       difficulty = input.value;
       resetGame();
       showScreen(screenStart);
@@ -204,6 +220,8 @@ if (difficultyOptions.length){
 function showScreen(el){
   [screenStart, screenGame, screenOver].forEach(s => s && s.classList.remove('show'));
   el && el.classList.add('show');
+  if (el === screenGame) difficultyLocked = true;
+  if (el === screenStart || el === screenOver) difficultyLocked = false;
 }
 function flash(text, color){
   if (!toast) return;
@@ -238,26 +256,36 @@ let imgJugBlack  = null;
 })();
 
 function buildEasyStaticWorld(){
-  const patternLen = EASY_PATTERN.length;
-  let y = EASY_START_Y;
+  buildStaticPattern(EASY_PATTERN, EASY_START_Y, EASY_ROW_SPACING, 0);
+}
+
+function buildNormalStaticWorld(){
+  buildStaticPattern(NORMAL_PATTERN, NORMAL_START_Y, NORMAL_ROW_SPACING, NORMAL_PATTERN.length - 1);
+}
+
+function buildStaticPattern(pattern, startY, spacing, finalRowIndex){
+  const patternLen = pattern.length || 0;
+  if (!patternLen) return;
+  let y = startY;
   let index = 0;
   let lastObstacleY = -Infinity;
   while (y < TRACK_LEN - 200){
-    const def = EASY_PATTERN[index % patternLen];
-    placeEasyRow(def, y);
+    const def = pattern[index % patternLen];
+    placePatternRow(def, y);
     if (def.obstacles && def.obstacles.length){
       lastObstacleY = y;
     }
     index++;
-    y += EASY_ROW_SPACING;
+    y += spacing;
   }
-  if (TRACK_LEN - lastObstacleY > EASY_ROW_SPACING){
-    const finalY = TRACK_LEN - EASY_ROW_SPACING;
-    placeEasyRow(EASY_PATTERN[0], finalY);
+  if (TRACK_LEN - lastObstacleY > spacing){
+    const finalY = TRACK_LEN - spacing;
+    const finalDef = pattern[(finalRowIndex ?? 0) % patternLen];
+    placePatternRow(finalDef, finalY);
   }
 }
 
-function placeEasyRow(def, y){
+function placePatternRow(def, y){
   if (!def) return;
   if (def.obstacles){
     for (const seg of def.obstacles){
@@ -287,8 +315,12 @@ function genWorld(){
     buildEasyStaticWorld();
     return;
   }
+  if (difficulty === 'normal'){
+    buildNormalStaticWorld();
+    return;
+  }
 
-  const cfg = DIFFICULTIES[difficulty] || DIFFICULTIES.normal;
+  const cfg = DIFFICULTIES[difficulty] || DIFFICULTIES.hard;
   const rows = [];
   const minGap = cfg.rowGap[0];
   const gapRange = Math.max(0, cfg.rowGap[1] - cfg.rowGap[0]);
@@ -971,4 +1003,5 @@ btnResetInGame && btnResetInGame.addEventListener('click', () => {
   setHudTime(0); setHudJugs(0);
   genWorld();
 })();
+
 
