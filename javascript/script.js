@@ -90,10 +90,61 @@ const DIFFICULTIES = {
     yellowPlusEmptyFracMin: 0.15,
   },
 };
-const GRID_COLS = 20;
+const GRID_COLS = 12;
 const CELL_WIDTH = BASE_W / GRID_COLS;
 const BASE_OBSTACLE_MIN_FRAC = 0.15;
 const BASE_OBSTACLE_MAX_FRAC = 0.40;
+const EASY_ROW_SPACING = 160;
+const EASY_START_Y = 320;
+const EASY_PATTERN = [
+  {
+    obstacles: [{ start: 2, width: 8 }],
+    hazards: [1, 10],
+    yellows: [],
+  },
+  { obstacles: [], hazards: [], yellows: [] },
+  { obstacles: [], hazards: [], yellows: [5] },
+  {
+    obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
+    hazards: [6],
+    yellows: [4],
+  },
+  { obstacles: [], hazards: [], yellows: [] },
+  { obstacles: [], hazards: [], yellows: [] },
+  {
+    obstacles: [{ start: 2, width: 8 }],
+    hazards: [],
+    yellows: [1, 10],
+  },
+  { obstacles: [], hazards: [], yellows: [] },
+  { obstacles: [], hazards: [], yellows: [5] },
+  {
+    obstacles: [{ start: 0, width: 4 }, { start: 8, width: 4 }],
+    hazards: [4, 7],
+    yellows: [5],
+  },
+  { obstacles: [], hazards: [], yellows: [] },
+  { obstacles: [], hazards: [], yellows: [] },
+];
+
+function addObstacleCells(startCol, widthCols, y){
+  const left = startCol * CELL_WIDTH;
+  const widthPx = widthCols * CELL_WIDTH;
+  obstacles.push({
+    x: left + widthPx / 2,
+    y,
+    w: widthPx,
+    h: 52,
+  });
+}
+function addHazardCell(col, y){
+  const x = col * CELL_WIDTH + CELL_WIDTH / 2;
+  hazards.push({ x, y, w: 46, h: 26 });
+}
+function addYellowCell(col, y){
+  const x = col * CELL_WIDTH + CELL_WIDTH / 2;
+  jugs.push({ x, y });
+}
 
 let runnerX  = lanesX[Math.floor(lanesX.length/2)] || BASE_W/2;
 let runnerY  = 80;
@@ -194,12 +245,56 @@ let imgJugBlack  = null;
   try{ imgJugBlack  = await loadImage('assets/jerry_jug-black.svg');  } catch(e){ console.error('black failed'); }
 })();
 
+function buildEasyStaticWorld(){
+  const patternLen = EASY_PATTERN.length;
+  let y = EASY_START_Y;
+  let index = 0;
+  let lastObstacleY = -Infinity;
+  while (y < TRACK_LEN - 200){
+    const def = EASY_PATTERN[index % patternLen];
+    placeEasyRow(def, y);
+    if (def.obstacles && def.obstacles.length){
+      lastObstacleY = y;
+    }
+    index++;
+    y += EASY_ROW_SPACING;
+  }
+  if (TRACK_LEN - lastObstacleY > EASY_ROW_SPACING){
+    const finalY = TRACK_LEN - EASY_ROW_SPACING;
+    placeEasyRow(EASY_PATTERN[0], finalY);
+  }
+}
+
+function placeEasyRow(def, y){
+  if (!def) return;
+  if (def.obstacles){
+    for (const seg of def.obstacles){
+      addObstacleCells(seg.start, seg.width, y);
+    }
+  }
+  if (def.hazards){
+    for (const col of def.hazards){
+      addHazardCell(col, y);
+    }
+  }
+  if (def.yellows){
+    for (const col of def.yellows){
+      addYellowCell(col, y);
+    }
+  }
+}
+
 /* World */
 function genWorld(){
   jugs.length = 0;
   hazards.length = 0;
   obstacles.length = 0;
   jugCount = 0;
+
+  if (difficulty === 'easy'){
+    buildEasyStaticWorld();
+    return;
+  }
 
   const cfg = DIFFICULTIES[difficulty] || DIFFICULTIES.normal;
   const rows = [];
