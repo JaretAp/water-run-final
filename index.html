@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Water Run — charity: water</title>
+  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/theme.css?v=4" />
+</head>
+
+<body>
+  <!-- Start -->
+  <section id="screen-start" class="screen show">
+    <div class="panel">
+      <h1>Water Run</h1>
+      <p class="tagline">Race to the finish. Collect yellow jugs to reduce time. Avoid hazards that add time.</p>
+      <button id="btnStart" class="btn">Start Game!</button>
+    </div>
+  </section>
+
+  <!-- Game -->
+  <section id="screen-game" class="screen">
+    <div class="stage-wrap">
+      <div class="overlay-hud" aria-hidden="true">
+        <div class="hud-pill"><span>Time:</span><strong id="hudTime">0.00s</strong></div>
+        <div class="hud-pill"><span>Jugs:</span><strong id="hudJugs">0</strong></div>
+      </div>
+
+      <!-- In-game controls (clickable) -->
+      <div class="overlay-ctrl" aria-label="in-game controls">
+        <button id="btnResetInGame" class="btn btn-ghost btn-small" type="button">Reset</button>
+      </div>
+
+      <!-- Touch zones for phones/tablets -->
+      <div id="touchUpZone" class="touch-zone up" aria-hidden="true"></div>
+      <div id="touchDownZone" class="touch-zone down" aria-hidden="true"></div>
+
+      <canvas id="stage" width="480" height="720"></canvas>
+
+      <div id="toast" class="toast" aria-live="polite"></div>
+
+      <!-- Game instructions -->
+      <div id="instructions" class="game-instructions">
+        <p><strong>Use Arrow Keys</strong> to move left, right, up, and down.</p>
+        <p>Collect <img src="assets/jerry_jug_yellow.svg" alt="Yellow jug" class="jug-icon jug-yellow"> to reduce time.
+        </p>
+        <p>Avoid <img src="assets/jerry_jug_black.svg" alt="Black jug" class="jug-icon jug-black"> — they add time.</p>
+        <p>Press any arrow key to <strong>start</strong> the run!</p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Finish -->
+  <section id="screen-over" class="screen">
+    <div class="panel">
+      <h2>Finish!</h2>
+      <p class="scoreline">Final Time: <span id="finalTime">0.00</span>s</p>
+      <p class="msg">Each jug helped lower your time. Hazards added seconds.</p>
+      <button id="btnPlayAgain" class="btn">Race again</button>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <small>Prototype aligned to your Water Run concept.</small>
+  </footer>
+
+  <script src="javascript/script.js?v=4"></script>
+</body>
+
+</html>

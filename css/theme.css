@@ -1,0 +1,249 @@
+/* =========================================
+   Water Run — theme.css (single-source styles)
+   ========================================= */
+
+/* Brand tokens */
+:root{
+  --blue-bg:      #2FA9FF; /* page bg */
+  --green-field:  #2D9B4B; /* playfield */
+  --dark-obst:    #253331; /* dark elements */
+  --yellow-jug:   #FFD84D; /* accent */
+  --black-accent: #0C0E0F;
+  --hud-light:    #A7D0EE;
+  --error-red:    #FF585D;
+
+  --font-display: "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-body:    "Inter", "Segoe UI", system-ui, sans-serif;
+
+  --radius-lg: 16px;
+  --radius-sm: 12px;
+}
+
+/* Screen visibility (must match JS) */
+.screen{ display:none !important; min-height:100vh; align-items:center; justify-content:center; padding:20px; }
+.screen.show{ display:flex !important; }
+
+/* Global */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  background:var(--blue-bg);
+  color:var(--black-accent);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+}
+
+/* Panels (Start / Finish) */
+.panel{
+  background:transparent;
+  color:var(--black-accent);
+  text-align:center;
+  width:100%;
+  height:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1.2rem;
+}
+.panel h1,
+.panel h2{
+  font-family:var(--font-display);
+  font-size:clamp(2.4rem,6vw,3.6rem);
+  font-weight:800;
+  margin:0 0 .3rem 0;
+  text-shadow:0 2px 4px rgba(0,0,0,.15);
+}
+.tagline{
+  font-size:1.1rem;
+  font-weight:600;
+  color:var(--yellow-jug);
+  font-style:italic;
+  text-shadow:0 1px 2px rgba(0,0,0,.25);
+  margin:0 0 18px;
+}
+
+/* Buttons */
+.btn{
+  background:var(--dark-obst);
+  color:var(--yellow-jug);
+  border:0;
+  border-radius:12px;
+  padding:14px 28px;
+  font-weight:800;
+  font-size:1.1rem;
+  min-width:180px;
+  cursor:pointer;
+  transition:filter .15s ease;
+}
+.btn:hover{ filter:brightness(1.08); }
+.btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+/* Stage frame + canvas */
+.stage-wrap{
+  margin:18px auto;
+  width:min(95vw,540px);
+  aspect-ratio:2/3;
+  background:var(--green-field);
+  border:4px solid var(--dark-obst);
+  border-radius:var(--radius-lg);
+  overflow:hidden;
+  box-shadow:0 8px 24px rgba(0,0,0,.25);
+  position:relative;
+}
+#stage{
+  width:100%;
+  height:100%;
+  display:block;
+  background:var(--green-field);
+}
+
+/* HUD overlay inside stage */
+.overlay-hud{
+  position:absolute;
+  top:8px;
+  left:0;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 10px;
+  z-index:3;
+  pointer-events:none;
+}
+.hud-pill{
+  background:rgba(12,14,15,0.55);
+  color:#fff;
+  font-weight:700;
+  border-radius:12px;
+  padding:6px 10px;
+  display:flex;
+  gap:6px;
+  align-items:center;
+}
+.hud-pill strong{
+  color:var(--yellow-jug);
+  font-variant-numeric:tabular-nums;
+}
+
+/* Toast feedback */
+.toast{
+  position:absolute;
+  left:50%;
+  top:14px;
+  transform:translateX(-50%);
+  color:#fff;
+  font-weight:800;
+  text-shadow:0 2px 4px rgba(0,0,0,.6);
+  opacity:0;
+  transition:opacity .18s;
+  pointer-events:none;
+}
+
+/* Instructions overlay */
+.game-instructions{
+  position:absolute;
+  top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  color:#fff;
+  text-align:center;
+  font-size:1rem;
+  line-height:1.5;
+  background:rgba(0,0,0,0.4);
+  padding:16px 24px;
+  border-radius:12px;
+  max-width:360px;
+  z-index:5;
+  transition:opacity .3s ease;
+}
+.game-instructions.hidden{ opacity:0; pointer-events:none; }
+
+.jug-icon{ width:20px; height:24px; vertical-align:-4px; margin:0 6px; }
+.jug-yellow{ filter:drop-shadow(0 0 3px #ffd84d); }
+.jug-black { filter:drop-shadow(0 0 3px #000); }
+
+/* Finish specifics */
+#screen-over h2{
+  color:var(--error-red);
+}
+#screen-over .scoreline{
+  font-weight:800;
+  margin:6px 0 12px;
+}
+#screen-over .msg{
+  color:var(--black-accent);
+  font-style:italic;
+  opacity:.9;
+}
+
+/* Footer */
+.footer{
+  text-align:center;
+  color:var(--black-accent);
+  padding:12px;
+  font-size:.9rem;
+  opacity:.9;
+}
+
+/* Optional jug watermark on Start/Finish (paths from /css/) */
+#screen-start,
+#screen-over{
+  background:
+    url("../assets/jerry_jug_yellow.svg") 10% 20% / 64px no-repeat,
+    url("../assets/jerry_jug-black.svg") 86% 78% / 64px no-repeat,
+    var(--blue-bg);
+}
+
+/* Small screens */
+@media (max-width:420px){
+  .panel{ padding:22px 18px; }
+  .btn{ padding:12px 18px; }
+}
+
+/* In-game controls overlay (clickable) */
+.overlay-ctrl{
+  position:absolute;
+  bottom:8px;   /* moved from top to bottom */
+  right:10px;
+  z-index:6;
+  pointer-events:auto; /* must be clickable (overlay-hud uses none) */
+}
+
+
+.btn-ghost{
+  background: rgba(12,14,15,0.35);
+  color: #fff;
+  border: 2px solid rgba(255,216,77,0.85);
+}
+.btn-ghost:hover{ filter:brightness(1.08); }
+
+.btn-small{
+  padding: 8px 12px;
+  min-width: auto;
+  font-size: .95rem;
+  border-radius: 10px;
+}
+
+/* Touch support */
+#stage, .stage-wrap {
+  touch-action: none;            /* prevent scroll/zoom gestures */
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* Invisible press zones (only show on touch devices) */
+.touch-zone {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  z-index: 6;
+  pointer-events: auto;
+}
+.touch-zone.up   { top: 0;    height: 48%; }
+.touch-zone.down { bottom: 0; height: 52%; }
+
+/* On non-touch devices, disable the zones */
+@media (hover: hover) and (pointer: fine) {
+  .touch-zone { display: none; }
+}
