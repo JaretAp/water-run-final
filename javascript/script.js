@@ -53,8 +53,8 @@ const lanesX = Array.from({ length: LANE_COUNT }, (_, i) => {
 const laneSpacing = lanesX.length > 1 ? (lanesX[1] - lanesX[0]) : (BASE_W - EDGE_MARGIN * 2);
 const RUNNER_HALF_WIDTH = 18;
 const RUNNER_TOP_OFFSET = 40;
-const RUNNER_BOTTOM_OFFSET = 20;
-const OBSTACLE_PADDING = 6;
+const RUNNER_BOTTOM_OFFSET = 12;
+const OBSTACLE_PADDING = 12;
 const minRunnerX = EDGE_MARGIN;
 const maxRunnerX = BASE_W - EDGE_MARGIN;
 const DIFFICULTIES = {
