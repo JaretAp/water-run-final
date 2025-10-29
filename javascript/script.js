@@ -212,6 +212,42 @@ const NORMAL_PATTERN = [
   },
 ];
 
+const HARD_ROW_SPACING = 100;
+const HARD_START_Y = 280;
+const HARD_PATTERN = [
+  { // Hard Row 1
+    obstacles: [],
+    hazards: [4, 6],
+    yellows: [3, 7],
+  },
+  { // Hard Row 2
+    obstacles: [{ start: 0, width: 1 }, { start: 3, width: 6 }, { start: 11, width: 1 }],
+    hazards: [1, 10],
+    yellows: [],
+  },
+  { // Hard Row 3
+    obstacles: [{ start: 0, width: 5 }, { start: 8, width: 4 }],
+    hazards: [5, 7],
+    yellows: [],
+  },
+  { // Hard Row 4
+    obstacles: [{ start: 0, width: 1 }, { start: 11, width: 1 }],
+    hazards: [7],
+    yellows: [3, 6],
+  },
+  { // Hard Row 5
+    obstacles: [{ start: 0, width: 1 }, { start: 11, width: 1 }],
+    hazards: [3, 5, 6, 8, 9],
+    yellows: [2, 7],
+  },
+  { // Hard Row 6
+    obstacles: [{ start: 0, width: 1 }, { start: 4, width: 5 }, { start: 11, width: 1 }],
+    hazards: [10],
+    yellows: [2],
+  },
+];
+
+
 function addObstacleCells(startCol, widthCols, y){
   const left = startCol * CELL_WIDTH;
   const widthPx = widthCols * CELL_WIDTH;
@@ -247,6 +283,53 @@ const jugs      = [];
 const hazards   = [];
 const obstacles = [];
 let jugCount    = 0;
+
+const BEST_TIMES_KEY = 'water-run-best-times-v1';
+let bestTimes = loadBestTimes();
+
+function loadBestTimes() {
+  try {
+    const raw = localStorage.getItem(BEST_TIMES_KEY);
+    if (!raw) return { easy: null, normal: null, hard: null };
+    const parsed = JSON.parse(raw);
+    return {
+      easy: typeof parsed.easy === 'number' ? parsed.easy : null,
+      normal: typeof parsed.normal === 'number' ? parsed.normal : null,
+      hard: typeof parsed.hard === 'number' ? parsed.hard : null,
+    };
+  } catch (err) {
+    console.warn('Failed to load best times', err);
+    return { easy: null, normal: null, hard: null };
+  }
+}
+
+function saveBestTimes() {
+  try {
+    localStorage.setItem(BEST_TIMES_KEY, JSON.stringify(bestTimes));
+  } catch (err) {
+    console.warn('Failed to save best times', err);
+  }
+}
+
+function createSound(src){
+  const audio = new Audio(src);
+  audio.preload = 'auto';
+  return audio;
+}
+const SOUND_YELLOW = createSound('assets/ding-101377.mp3');
+const SOUND_HAZARD = createSound('assets/cinematic-thud-fx-379991.mp3');
+const SOUND_FINISH = createSound('assets/wow-423653.mp3');
+
+function playSound(audio){
+  if (!audio) return;
+  try {
+    audio.currentTime = 0;
+    const p = audio.play();
+    if (p && typeof p.catch === 'function') p.catch(() => {});
+  } catch (err) {
+    // ignore playback restrictions
+  }
+}
 
 /* Utils */
 const worldToScreenY = (y) => BASE_H - (y - camY);
@@ -315,6 +398,15 @@ function setHudJugs(count){
   if (hudJugsEl) hudJugsEl.textContent = String(count);
 }
 
+function updateBestTimeDisplay(){
+  const easyEl = document.getElementById('bestEasy');
+  const normalEl = document.getElementById('bestNormal');
+  const hardEl = document.getElementById('bestHard');
+  if (easyEl) easyEl.textContent = bestTimes.easy != null ? bestTimes.easy.toFixed(2) + 's' : '--';
+  if (normalEl) normalEl.textContent = bestTimes.normal != null ? bestTimes.normal.toFixed(2) + 's' : '--';
+  if (hardEl) hardEl.textContent = bestTimes.hard != null ? bestTimes.hard.toFixed(2) + 's' : '--';
+}
+
 /* Assets */
 function loadImage(src){
   return new Promise((res, rej) => {
@@ -337,7 +429,10 @@ function buildEasyStaticWorld(){
 }
 
 function buildNormalStaticWorld(){
-  buildStaticPattern(NORMAL_PATTERN, NORMAL_START_Y, NORMAL_ROW_SPACING, NORMAL_PATTERN.length - 2);
+  buildStaticPattern(NORMAL_PATTERN, NORMAL_START_Y, NORMAL_ROW_SPACING, NORMAL_PATTERN.length - 1);
+}
+function buildHardStaticWorld(){
+  buildStaticPattern(HARD_PATTERN, HARD_START_Y, HARD_ROW_SPACING, HARD_PATTERN.length - 1);
 }
 
 function buildStaticPattern(pattern, startY, spacing, finalRowIndex){
@@ -396,6 +491,10 @@ function genWorld(){
   }
   if (difficulty === 'normal'){
     buildNormalStaticWorld();
+    return;
+  }
+  if (difficulty === 'hard'){
+    buildHardStaticWorld();
     return;
   }
 
@@ -884,12 +983,30 @@ function startGame(){
 }
 function finish(){
   playing = false;
-  if (finalTimeEl) finalTimeEl.textContent = (Math.round(elapsed*100)/100).toFixed(2);
+  const timeRounded = (Math.round(elapsed*100)/100);
+  if (finalTimeEl) finalTimeEl.textContent = timeRounded.toFixed(2);
+  maybeUpdateBestTime(timeRounded);
+  playSound(SOUND_FINISH);
   showScreen(screenOver);
   celebrate();
 }
 
 /* Confetti */
+function maybeUpdateBestTime(timeSeconds){
+  const key = difficulty || 'normal';
+  const current = bestTimes[key];
+  if (current == null || timeSeconds < current){
+    bestTimes[key] = timeSeconds;
+    saveBestTimes();
+    updateBestTimeDisplay();
+  }
+}
+
+function resetBestTimes(){
+  bestTimes = { easy: null, normal: null, hard: null };
+  saveBestTimes();
+  updateBestTimeDisplay();
+}
 function celebrate(){
   const wrap = document.querySelector('.stage-wrap');
   if (!wrap) return;
@@ -964,6 +1081,7 @@ function loop(ts){
       jugCount++; setHudJugs(jugCount);
       elapsed = Math.max(0, elapsed - 3); setHudTime(elapsed);
       flash('-3.00s', '#22c55e');
+      playSound(SOUND_YELLOW);
     }
   }
   for (let i=hazards.length-1; i>=0; i--){
@@ -975,6 +1093,7 @@ function loop(ts){
       hazards.splice(i,1);
       elapsed += 4; setHudTime(elapsed);
       flash('+4.00s', '#ef4444');
+      playSound(SOUND_HAZARD);
     }
   }
 
@@ -1075,13 +1194,25 @@ btnResetInGame && btnResetInGame.addEventListener('click', () => {
   showScreen(screenStart);
 });
 
+const btnResetScores = document.getElementById('btnResetScores');
+btnResetScores && btnResetScores.addEventListener('click', () => {
+  resetBestTimes();
+});
+
 
 /* Init */
 (function init(){
   showScreen(screenStart);
   setHudTime(0); setHudJugs(0);
+  updateBestTimeDisplay();
   genWorld();
 })();
+
+
+
+
+
+
 
 
 
