@@ -465,10 +465,10 @@ function showScreen(el){
 function showHalfwayToast(){
   if (!milestoneToast) return;
   milestoneToast.textContent = 'Halfway done, keep going!';
-  milestoneToast.style.opacity = 1;
+  milestoneToast.classList.add('show');
   if (milestoneToastTimeout) clearTimeout(milestoneToastTimeout);
   milestoneToastTimeout = setTimeout(() => {
-    milestoneToast.style.opacity = 0;
+    milestoneToast.classList.remove('show');
     milestoneToastTimeout = null;
   }, 5000);
 }
@@ -1073,7 +1073,7 @@ function resetGame(){
   runnerAnimElapsed = 0;
   runnerImpulseTimer = 0;
   if (milestoneToast){
-    milestoneToast.style.opacity = 0;
+    milestoneToast.classList.remove('show');
   }
   if (milestoneToastTimeout){
     clearTimeout(milestoneToastTimeout);
