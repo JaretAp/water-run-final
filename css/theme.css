@@ -279,3 +279,9 @@ body{
 @media (hover: hover) and (pointer: fine) {
   .touch-zone { display: none; }
 }
+
+.site-footer{margin-top:auto;background:rgba(12,14,15,0.08);padding:18px 16px;}
+.site-footer .footer-inner{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;font-family:'Montserrat','Inter','Segoe UI',sans-serif;font-weight:700;}
+.site-footer a{color:var(--black-accent);text-decoration:none;letter-spacing:.02em;}
+.site-footer a:hover{text-decoration:underline;}
+

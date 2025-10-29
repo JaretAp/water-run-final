@@ -68,3 +68,9 @@ body{
   position:absolute; width:6px; height:10px; opacity:.9; top:-10px; animation:fall linear forwards;
 }
 @keyframes fall{ to{ transform: translateY(120vh) rotate(720deg); opacity:1; } }
+
+.site-footer{margin-top:auto;background:#f9fafb;padding:18px 16px;}
+.site-footer .footer-inner{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;font-family:'Montserrat','Inter','Segoe UI',sans-serif;font-weight:600;}
+.site-footer a{color:var(--ink);text-decoration:none;letter-spacing:.02em;}
+.site-footer a:hover{text-decoration:underline;}
+
