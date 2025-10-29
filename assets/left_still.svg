@@ -1,0 +1,34 @@
+<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Head (solid) -->
+  <circle cx="44" cy="42" r="12" fill="#0C0E0F"/>
+
+  <!-- Hat base -->
+  <path d="M32 38 Q44 20, 56 38 Q56 44, 32 44 Z" fill="#FFD84D"/>
+
+  <!-- Hat brim (flat, pointing left) -->
+  <path d="M32 40 Q18 42, 20 36 Q25 34, 32 36 Z" fill="#FFD84D"/>
+
+  <!-- Neck -->
+  <rect x="41" y="52" width="6" height="6" fill="#0C0E0F"/>
+
+  <!-- Torso -->
+  <rect x="36" y="58" width="16" height="40" fill="#FFD84D"/>
+
+  <!-- Arm (centered) -->
+  <line x1="44" y1="64" x2="44" y2="84" stroke="#0C0E0F" stroke-width="5"/>
+  <line x1="44" y1="84" x2="46" y2="104" stroke="#0C0E0F" stroke-width="5"/>
+
+  <!-- Leg (centered) -->
+  <line x1="44" y1="98" x2="44" y2="122" stroke="#FFD84D" stroke-width="6"/>
+  <line x1="44" y1="122" x2="44" y2="147" stroke="#0C0E0F" stroke-width="6"/>
+
+  <!-- Foot: connected to leg, with oval toe and heel extension -->
+  <path d="M28 147 
+           Q28 150, 32 151 
+           L48 151 
+           Q48 148, 44 147 
+           Z" 
+        fill="#FF585D"/>
+
+</svg>

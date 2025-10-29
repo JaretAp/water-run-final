@@ -1,0 +1,48 @@
+<svg viewBox="0 0 100 200" xmlns="http://www.w3.org/2000/svg">
+
+  <!-- Head -->
+  <circle cx="44" cy="42" r="12" fill="#0C0E0F"/>
+
+  <!-- Hat base -->
+  <path d="M32 38 Q44 20, 56 38 Q56 44, 32 44 Z" fill="#FFD84D"/>
+
+  <!-- Hat brim -->
+  <path d="M32 40 Q18 42, 20 36 Q25 34, 32 36 Z" fill="#FFD84D"/>
+
+  <!-- Neck -->
+  <rect x="41" y="52" width="6" height="6" fill="#0C0E0F"/>
+
+  <!-- Torso -->
+  <rect x="36" y="58" width="16" height="40" fill="#FFD84D"/>
+
+  <!-- FRONT ARM -->
+  <line x1="44" y1="64" x2="30" y2="80" stroke="#0C0E0F" stroke-width="6"/>
+  <line x1="30" y1="80" x2="14" y2="80" stroke="#0C0E0F" stroke-width="6"/>
+
+  <!-- BACK ARM -->
+  <line x1="52" y1="76" x2="60" y2="88" stroke="#0C0E0F" stroke-width="5"/>
+  <line x1="60" y1="88" x2="66" y2="98" stroke="#0C0E0F" stroke-width="5"/>
+
+  <!-- FRONT LEG -->
+  <line x1="44" y1="98" x2="36" y2="118" stroke="#FFD84D" stroke-width="6"/>
+  <line x1="36" y1="118" x2="30" y2="134" stroke="#0C0E0F" stroke-width="6"/>
+  <!-- Front foot (connected, left-facing) -->
+  <path d="M14 134 
+           Q14 136, 18 137 
+           L34 137 
+           Q34 135, 30 134 
+           Z" fill="#FF585D"/>
+
+  <!-- BACK LEG -->
+  <line x1="48" y1="98" x2="54" y2="115" stroke="#FFD84D" stroke-width="5"/>
+  <line x1="54" y1="115" x2="58" y2="130" stroke="#0C0E0F" stroke-width="5"/>
+  <!-- Back foot (now perfectly connected to back leg) -->
+  <path d="M58 130 
+           L42 130 
+           Q38 131, 38 134 
+           Q38 136, 42 136 
+           L58 136 
+           Q62 135, 58 130 
+           Z" fill="#FF585D"/>
+
+</svg>
