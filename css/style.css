@@ -21,8 +21,13 @@ body{
 .screen.show{ display:flex }
 
 .panel{
-  background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:28px 24px;
-  width:min(92vw,640px); text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.08);
+  background:#fff;
+  border:0;
+  border-radius:0;
+  padding:28px 24px;
+  width:min(92vw,640px);
+  text-align:center;
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
 }
 .panel h1{ margin:0 0 8px; font-size:clamp(28px,3.5vw,40px) }
 .tagline{ color:var(--muted); margin:0 0 18px }
