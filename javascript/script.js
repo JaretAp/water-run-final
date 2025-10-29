@@ -1313,19 +1313,24 @@ canvas.addEventListener('touchend', (e) => {
 
 // Press-and-hold zones for vertical movement
 function holdStart(direction){
-  if (gameArmed) beginIfArmedAndTouch(direction);
+  if (gameArmed){
+    if (direction === 'up' || direction === 'down'){
+      beginIfArmedAndTouch(direction);
+    } else {
+      beginIfArmedAndTouch(null);
+    }
+  }
   if (!playing) return;
   if (direction === 'up')   upHeld = true;
   if (direction === 'down') downHeld = true;
+  if (direction === 'left') leftHeld = true;
+  if (direction === 'right') rightHeld = true;
 }
 function holdEnd(direction){
   if (direction === 'up')   upHeld = false;
   if (direction === 'down') downHeld = false;
-}
-function laneTap(direction){
-  if (gameArmed) beginIfArmedAndTouch(null);
-  if (!playing) return;
-  snapRunnerToLane(direction);
+  if (direction === 'left') leftHeld = false;
+  if (direction === 'right') rightHeld = false;
 }
 
 upZone && upZone.addEventListener('touchstart', (e) => { holdStart('up'); e.preventDefault(); }, { passive:false });
@@ -1336,8 +1341,13 @@ downZone && downZone.addEventListener('touchstart', (e) => { holdStart('down'); 
 downZone && downZone.addEventListener('touchend',   (e) => { holdEnd('down');   e.preventDefault(); }, { passive:false });
 downZone && downZone.addEventListener('touchcancel',(e) => { holdEnd('down');   e.preventDefault(); }, { passive:false });
 
-leftZone && leftZone.addEventListener('touchstart', (e) => { laneTap(-1); e.preventDefault(); }, { passive:false });
-rightZone && rightZone.addEventListener('touchstart', (e) => { laneTap(1); e.preventDefault(); }, { passive:false });
+leftZone && leftZone.addEventListener('touchstart', (e) => { holdStart('left'); e.preventDefault(); }, { passive:false });
+leftZone && leftZone.addEventListener('touchend',   (e) => { holdEnd('left');   e.preventDefault(); }, { passive:false });
+leftZone && leftZone.addEventListener('touchcancel',(e) => { holdEnd('left');   e.preventDefault(); }, { passive:false });
+
+rightZone && rightZone.addEventListener('touchstart', (e) => { holdStart('right'); e.preventDefault(); }, { passive:false });
+rightZone && rightZone.addEventListener('touchend',   (e) => { holdEnd('right');   e.preventDefault(); }, { passive:false });
+rightZone && rightZone.addEventListener('touchcancel',(e) => { holdEnd('right');   e.preventDefault(); }, { passive:false });
 
 
 /* Buttons */
