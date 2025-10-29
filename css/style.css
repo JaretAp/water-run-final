@@ -10,14 +10,22 @@
 }
 
 *{box-sizing:border-box}
-html,body{height:100%}
+html,body{height:100%; min-height:100vh;}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:'Montserrat','Segoe UI','Helvetica Neue',Arial,sans-serif;
   display:flex; flex-direction:column;
 }
 
-.screen{ display:none; min-height:100vh; align-items:center; justify-content:center; padding:20px }
+.screen{
+  display:none;
+  flex:1 0 auto;
+  min-height:0;
+  width:100%;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
 .screen.show{ display:flex }
 
 .panel{
