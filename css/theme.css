@@ -306,11 +306,35 @@ body{
   position: absolute;
   left: 0;
   width: 100%;
-  z-index: 6;
+  z-index: 4;
   pointer-events: auto;
 }
 .touch-zone.up   { top: 0;    height: 48%; }
 .touch-zone.down { bottom: 0; height: 52%; }
+.touch-zone.left,
+.touch-zone.right{
+  display:none;
+}
+
+@media (max-width:640px){
+  .touch-zone.up,
+  .touch-zone.down{
+    width:72%;
+    left:14%;
+  }
+  .touch-zone.up   { height:38%; }
+  .touch-zone.down { height:38%; }
+
+  .touch-zone.left,
+  .touch-zone.right{
+    display:block;
+    top:20%;
+    height:60%;
+    width:28%;
+  }
+  .touch-zone.left{ left:0; }
+  .touch-zone.right{ left:auto; right:0; }
+}
 
 /* On non-touch devices, disable the zones */
 @media (hover: hover) and (pointer: fine) {

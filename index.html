@@ -46,8 +46,14 @@
         </label>
       </fieldset>
 
-      <button id="btnStart" class="btn">Start Game!</button>
-      <button id="btnResetScores" class="btn btn-outline btn-small" type="button">Reset Scores</button>
+      <div class="start-actions">
+        <img src="assets/jerry_jug_yellow.svg" alt="Yellow jug" class="start-jug start-jug-yellow" />
+        <div class="start-buttons">
+          <button id="btnStart" class="btn">Start Game!</button>
+          <button id="btnResetScores" class="btn btn-outline btn-small" type="button">Reset Scores</button>
+        </div>
+        <img src="assets/jerry_jug-black.svg" alt="Black jug" class="start-jug start-jug-black" />
+      </div>
     </div>
   </section>
 
@@ -67,6 +73,8 @@
       <!-- Touch zones for phones/tablets -->
       <div id="touchUpZone" class="touch-zone up" aria-hidden="true"></div>
       <div id="touchDownZone" class="touch-zone down" aria-hidden="true"></div>
+      <div id="touchLeftZone" class="touch-zone left" aria-hidden="true"></div>
+      <div id="touchRightZone" class="touch-zone right" aria-hidden="true"></div>
 
       <canvas id="stage" width="480" height="720"></canvas>
 

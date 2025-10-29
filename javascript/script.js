@@ -31,8 +31,10 @@ const difficultyOptions = difficultyInputs ? Array.from(difficultyInputs) : [];
 let difficulty = 'normal';
 let difficultyLocked = false;
 
-const upZone   = document.getElementById('touchUpZone');
-const downZone = document.getElementById('touchDownZone');
+const upZone    = document.getElementById('touchUpZone');
+const downZone  = document.getElementById('touchDownZone');
+const leftZone  = document.getElementById('touchLeftZone');
+const rightZone = document.getElementById('touchRightZone');
 
 
 const canvas = document.getElementById('stage');
@@ -1206,6 +1208,11 @@ function holdEnd(direction){
   if (direction === 'up')   upHeld = false;
   if (direction === 'down') downHeld = false;
 }
+function laneTap(direction){
+  if (gameArmed) beginIfArmedAndTouch(null);
+  if (!playing) return;
+  snapRunnerToLane(direction);
+}
 
 upZone && upZone.addEventListener('touchstart', (e) => { holdStart('up'); e.preventDefault(); }, { passive:false });
 upZone && upZone.addEventListener('touchend',   (e) => { holdEnd('up');   e.preventDefault(); }, { passive:false });
@@ -1214,6 +1221,9 @@ upZone && upZone.addEventListener('touchcancel',(e) => { holdEnd('up');   e.prev
 downZone && downZone.addEventListener('touchstart', (e) => { holdStart('down'); e.preventDefault(); }, { passive:false });
 downZone && downZone.addEventListener('touchend',   (e) => { holdEnd('down');   e.preventDefault(); }, { passive:false });
 downZone && downZone.addEventListener('touchcancel',(e) => { holdEnd('down');   e.preventDefault(); }, { passive:false });
+
+leftZone && leftZone.addEventListener('touchstart', (e) => { laneTap(-1); e.preventDefault(); }, { passive:false });
+rightZone && rightZone.addEventListener('touchstart', (e) => { laneTap(1); e.preventDefault(); }, { passive:false });
 
 
 /* Buttons */
