@@ -56,9 +56,34 @@ const lanesX = Array.from({ length: LANE_COUNT }, (_, i) => {
 });
 const laneSpacing = lanesX.length > 1 ? (lanesX[1] - lanesX[0]) : (BASE_W - EDGE_MARGIN * 2);
 const RUNNER_HALF_WIDTH = 18;
-const RUNNER_TOP_OFFSET = 40;
+const RUNNER_TOP_OFFSET = 32;
 const RUNNER_BOTTOM_OFFSET = 12;
-const OBSTACLE_PADDING = 12;
+const OBSTACLE_PADDING_X = 10;
+const OBSTACLE_PADDING_TOP = 4;
+const OBSTACLE_PADDING_BOTTOM = 8;
+const RUNNER_SPRITE_WIDTH = 64;
+const RUNNER_SPRITE_HEIGHT = 64;
+const RUNNER_SPRITE_BASE_OFFSET = 38; // shift art downward so feet align with collision box
+const RUNNER_FRAME_DURATION = 0.18;
+const RUNNER_SPRITE_SOURCES = {
+  forward: {
+    idle: 'assets/forward-still.svg',
+    move: ['assets/forward-move-1.svg', 'assets/forward-move-2.svg'],
+  },
+  left: {
+    idle: 'assets/left_still.svg',
+    move: ['assets/left_motion_1.svg', 'assets/left_motion_2.svg'],
+  },
+  right: {
+    idle: 'assets/right_still.svg',
+    move: ['assets/right_motion_1.svg', 'assets/right_motion_2.svg'],
+  },
+};
+const runnerSprites = {
+  forward: { idle: null, move: [] },
+  left: { idle: null, move: [] },
+  right: { idle: null, move: [] },
+};
 const minRunnerX = EDGE_MARGIN;
 const maxRunnerX = BASE_W - EDGE_MARGIN;
 const DIFFICULTIES = {
@@ -275,6 +300,11 @@ let runnerX  = lanesX[Math.floor(lanesX.length/2)] || BASE_W/2;
 let runnerY  = 80;
 const MOVE_SPEED = 252; // 20% faster movement
 let upHeld = false, downHeld = false, leftHeld = false, rightHeld = false;
+let runnerFacing = 'forward';
+let runnerMoving = false;
+let runnerAnimFrameIndex = 0;
+let runnerAnimElapsed = 0;
+let runnerImpulseTimer = 0;
 
 let camY     = 0;
 
@@ -354,19 +384,60 @@ function getNearestLaneIndex(){
   }
   return nearest;
 }
+function applyLaneSnapImpulse(dir){
+  runnerFacing = dir > 0 ? 'right' : 'left';
+  runnerMoving = true;
+  runnerAnimFrameIndex = 0;
+  runnerAnimElapsed = 0;
+  runnerImpulseTimer = 0.18;
+}
 function snapRunnerToLane(delta){
-  const next = Math.max(0, Math.min(lanesX.length - 1, getNearestLaneIndex() + delta));
+  const currentLane = getNearestLaneIndex();
+  const next = Math.max(0, Math.min(lanesX.length - 1, currentLane + delta));
+  if (next === currentLane) return;
   runnerX = lanesX[next];
+  applyLaneSnapImpulse(next > currentLane ? 1 : -1);
+}
+function updateRunnerAnimation(movedX, movedY, dtSec){
+  if (runnerImpulseTimer > 0){
+    runnerImpulseTimer = Math.max(0, runnerImpulseTimer - dtSec);
+  }
+  const absX = Math.abs(movedX);
+  const absY = Math.abs(movedY);
+  let desiredFacing = runnerFacing;
+  if (absX > 0.1 && absX >= absY){
+    desiredFacing = movedX > 0 ? 'right' : 'left';
+  } else if (absY > 0.1){
+    desiredFacing = 'forward';
+  }
+  if (desiredFacing !== runnerFacing){
+    runnerFacing = desiredFacing;
+    runnerAnimFrameIndex = 0;
+    runnerAnimElapsed = 0;
+  }
+  const active = absX > 0.1 || absY > 0.1 || runnerImpulseTimer > 0;
+  if (active){
+    runnerAnimElapsed += dtSec;
+    const frames = (runnerSprites[runnerFacing] && runnerSprites[runnerFacing].move) || [];
+    if (frames.length > 0 && runnerAnimElapsed >= RUNNER_FRAME_DURATION){
+      runnerAnimElapsed = 0;
+      runnerAnimFrameIndex = (runnerAnimFrameIndex + 1) % frames.length;
+    }
+  } else {
+    runnerAnimFrameIndex = 0;
+    runnerAnimElapsed = 0;
+  }
+  runnerMoving = active;
 }
 const runnerIntersectsObstacle = (rX, rY, ob) => {
   const runnerLeft = rX - RUNNER_HALF_WIDTH;
   const runnerRight = rX + RUNNER_HALF_WIDTH;
   const runnerTop = rY - RUNNER_TOP_OFFSET;
   const runnerBottom = rY + RUNNER_BOTTOM_OFFSET;
-  const obLeft = ob.x - ob.w/2 + OBSTACLE_PADDING;
-  const obRight = ob.x + ob.w/2 - OBSTACLE_PADDING;
-  const obTop = ob.y - ob.h/2 + OBSTACLE_PADDING;
-  const obBottom = ob.y + ob.h/2 - OBSTACLE_PADDING;
+  const obLeft = ob.x - ob.w/2 + OBSTACLE_PADDING_X;
+  const obRight = ob.x + ob.w/2 - OBSTACLE_PADDING_X;
+  const obTop = ob.y - ob.h/2 + OBSTACLE_PADDING_TOP;
+  const obBottom = ob.y + ob.h/2 - OBSTACLE_PADDING_BOTTOM;
   return !(runnerRight < obLeft || runnerLeft > obRight || runnerBottom < obTop || runnerTop > obBottom);
 };
 function applyDifficultySelection(){
@@ -437,10 +508,33 @@ function loadImage(src){
 }
 let imgJugYellow = null;
 let imgJugBlack  = null;
+async function loadRunnerSpriteAssets(){
+  const tasks = [];
+  for (const [dir, cfg] of Object.entries(RUNNER_SPRITE_SOURCES)){
+    if (cfg.idle){
+      tasks.push(
+        loadImage(cfg.idle)
+          .then((img) => { runnerSprites[dir].idle = img; })
+          .catch((err) => console.error('runner idle failed', cfg.idle, err))
+      );
+    }
+    if (Array.isArray(cfg.move)){
+      cfg.move.forEach((src, idx) => {
+        tasks.push(
+          loadImage(src)
+            .then((img) => { runnerSprites[dir].move[idx] = img; })
+            .catch((err) => console.error('runner move failed', src, err))
+        );
+      });
+    }
+  }
+  await Promise.all(tasks);
+}
 
 (async function preloadAssets(){
   try{ imgJugYellow = await loadImage('assets/jerry_jug_yellow.svg'); } catch(e){ console.error('yellow failed'); }
   try{ imgJugBlack  = await loadImage('assets/jerry_jug-black.svg');  } catch(e){ console.error('black failed'); }
+  try{ await loadRunnerSpriteAssets(); } catch(err){ console.error('runner sprites failed', err); }
 })();
 
 function buildEasyStaticWorld(){
@@ -896,14 +990,27 @@ function drawBackground(ts){
     ctx.fillText('FINISH', BASE_W/2, finishScreenY - 12);
   }
 }
+function getRunnerSprite(){
+  const pack = runnerSprites[runnerFacing] || runnerSprites.forward;
+  if (runnerMoving && pack.move && pack.move.length){
+    const idx = runnerAnimFrameIndex % pack.move.length;
+    return pack.move[idx] || pack.idle || null;
+  }
+  return pack.idle || (pack.move ? pack.move[0] : null) || null;
+}
 function drawRunner(){
   const x = runnerX;
-  const yS = worldToScreenY(runnerY);
+  const baseY = worldToScreenY(runnerY) + RUNNER_SPRITE_BASE_OFFSET;
+  const sprite = getRunnerSprite();
+  if (sprite){
+    ctx.drawImage(sprite, x - RUNNER_SPRITE_WIDTH/2, baseY - RUNNER_SPRITE_HEIGHT, RUNNER_SPRITE_WIDTH, RUNNER_SPRITE_HEIGHT);
+    return;
+  }
   ctx.fillStyle = '#60a5fa';
-  ctx.fillRect(x - 18, yS - 32, 36, 52);
+  ctx.fillRect(x - 18, baseY - 52, 36, 52);
   ctx.beginPath();
   ctx.fillStyle = '#93c5fd';
-  ctx.arc(x, yS - 40, 12, 0, Math.PI*2);
+  ctx.arc(x, baseY - 64, 12, 0, Math.PI*2);
   ctx.fill();
 }
 const SPRITE_W = 40, SPRITE_H = 48;
@@ -960,6 +1067,11 @@ function resetGame(){
   lastTs = 0;
   upHeld = downHeld = leftHeld = rightHeld = false;
   halfWayToastShown = false;
+  runnerFacing = 'forward';
+  runnerMoving = false;
+  runnerAnimFrameIndex = 0;
+  runnerAnimElapsed = 0;
+  runnerImpulseTimer = 0;
   if (milestoneToast){
     milestoneToast.style.opacity = 0;
   }
@@ -1094,6 +1206,8 @@ function loop(ts){
     runnerY = prevRunnerY;
     break;
   }
+
+  updateRunnerAnimation(runnerX - prevRunnerX, runnerY - prevRunnerY, dtSec);
 
   camY = Math.max(camY, runnerY - 0.68 * BASE_H);
 
