@@ -27,7 +27,7 @@
   width:100%;
   align-items:center;
   justify-content:center;
-  padding:20px;
+  padding:0;
 }
 .screen.show{
   display:flex !important;
@@ -65,7 +65,8 @@ body{
   font-size:clamp(2.4rem,6vw,3.6rem);
   font-weight:800;
   margin:0 0 .3rem 0;
-  text-shadow:0 2px 4px rgba(0,0,0,.15);
+  color:#fff;
+  text-shadow:0 2px 6px rgba(0,0,0,.25);
 }
 .tagline{
   font-size:1.1rem;
@@ -234,13 +235,15 @@ body{
   letter-spacing:0.04em;
 }
 #screen-over .scoreline{
-  font-weight:800;
-  margin:6px 0 12px;
+  font-weight:700;
+  margin:6px 0 10px;
+  color:var(--yellow-jug);
+  text-shadow:0 1px 2px rgba(0,0,0,0.45);
 }
 #screen-over .msg{
-  color:var(--black-accent);
-  font-style:italic;
-  opacity:.9;
+  color:var(--yellow-jug);
+  font-weight:600;
+  text-shadow:0 1px 2px rgba(0,0,0,0.35);
 }
 
 /* Footer */
@@ -316,7 +319,12 @@ body{
 
 .site-footer{margin-top:auto;background:rgba(12,14,15,0.08);padding:18px 16px;}
 .site-footer .footer-inner{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;font-family:'Montserrat','Segoe UI','Helvetica Neue',Arial,sans-serif;font-weight:700;}
-.site-footer a{color:var(--black-accent);text-decoration:none;letter-spacing:.02em;}
+.site-footer a{
+  color:var(--yellow-jug);
+  text-decoration:none;
+  letter-spacing:.02em;
+  text-shadow:0 1px 2px rgba(0,0,0,0.4);
+}
 .site-footer a:hover{text-decoration:underline;}
 
 .finish-congrats{

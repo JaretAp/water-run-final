@@ -13,6 +13,17 @@
 </head>
 
 <body>
+  <div class="global-best-times">
+    <div class="best-times best-times-top">
+      <h3 class="best-times-title">Best Times!</h3>
+      <div class="best-times-grid">
+        <span class="best-times-item">Easy: <strong id="bestEasy">--</strong></span>
+        <span class="best-times-item">Normal: <strong id="bestNormal">--</strong></span>
+        <span class="best-times-item">Hard: <strong id="bestHard">--</strong></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Start -->
   <section id="screen-start" class="screen show">
     <div class="panel">
@@ -34,15 +45,6 @@
           <span>Hard</span>
         </label>
       </fieldset>
-
-      <div class="best-times">
-        <h3 class="best-times-title">Best Times!</h3>
-        <div class="best-times-grid">
-          <span class="best-times-item">Easy: <strong id="bestEasy">--</strong></span>
-          <span class="best-times-item">Normal: <strong id="bestNormal">--</strong></span>
-          <span class="best-times-item">Hard: <strong id="bestHard">--</strong></span>
-        </div>
-      </div>
 
       <button id="btnStart" class="btn">Start Game!</button>
       <button id="btnResetScores" class="btn btn-outline btn-small" type="button">Reset Scores</button>
@@ -69,6 +71,7 @@
       <canvas id="stage" width="480" height="720"></canvas>
 
       <div id="toast" class="toast" aria-live="polite"></div>
+      <div id="milestoneToast" class="toast milestone-toast" aria-live="polite"></div>
 
       <!-- Game instructions -->
       <div id="instructions" class="game-instructions">
@@ -88,14 +91,6 @@
       <p class="scoreline">Final Time: <span id="finalTime">0.00</span>s</p>
       <p class="msg">Each jug helped lower your time. Hazards added seconds.</p>
       <p id="finishCongrats" class="finish-congrats hidden">New best time! Fantastic run!</p>
-      <div class="best-times best-times-over">
-        <h3 class="best-times-title">Best Times!</h3>
-        <div class="best-times-grid">
-          <span class="best-times-item">Easy: <strong id="bestEasyOver">--</strong></span>
-          <span class="best-times-item">Normal: <strong id="bestNormalOver">--</strong></span>
-          <span class="best-times-item">Hard: <strong id="bestHardOver">--</strong></span>
-        </div>
-      </div>
       <button id="btnPlayAgain" class="btn">Race again</button>
       <button id="btnBackToMenu" class="btn btn-outline" type="button">Back to Main Menu</button>
     </div>

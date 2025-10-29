@@ -24,7 +24,7 @@ body{
   width:100%;
   align-items:center;
   justify-content:center;
-  padding:20px;
+  padding:0;
 }
 .screen.show{ display:flex }
 
@@ -39,6 +39,17 @@ body{
 }
 .panel h1{ margin:0 0 8px; font-size:clamp(28px,3.5vw,40px) }
 .tagline{ color:var(--muted); margin:0 0 18px }
+
+.global-best-times{
+  width:100%;
+  display:flex;
+  justify-content:center;
+  padding:18px 0 12px;
+  flex:0 0 auto;
+}
+.global-best-times .best-times{
+  margin:0;
+}
 
 .best-times{
   margin:0 0 18px;
@@ -123,6 +134,11 @@ body{
   position:absolute; left:50%; top:14px; transform:translateX(-50%);
   color:#fff; font-weight:800; text-shadow:0 2px 4px rgba(0,0,0,.6);
   opacity:0; transition:opacity .18s;
+}
+.milestone-toast{
+  top:120px;
+  font-size:1.05rem;
+  letter-spacing:.04em;
 }
 
 .footer{ text-align:center; color:var(--muted); padding:10px 12px }

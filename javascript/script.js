@@ -20,6 +20,7 @@ const btnBackToMenu = document.getElementById('btnBackToMenu');
 
 const finalTimeEl  = document.getElementById('finalTime');
 const toast        = document.getElementById('toast');
+const milestoneToast = document.getElementById('milestoneToast');
 
 const hudTimeEl = document.getElementById('hudTime');
 const hudJugsEl = document.getElementById('hudJugs');
@@ -286,6 +287,7 @@ const obstacles = [];
 let jugCount    = 0;
 
 let halfWayToastShown = false;
+let milestoneToastTimeout = null;
 
 
 const BEST_TIMES_KEY = 'water-run-best-times-v1';
@@ -388,14 +390,13 @@ function showScreen(el){
   if (el === screenStart || el === screenOver) difficultyLocked = false;
 }
 function showHalfwayToast(){
-  if (!toast) return;
-  toast.textContent = 'Halfway done, keep going!';
-  toast.style.color = '#fff';
-  toast.style.top = '60px';
-  toast.style.opacity = 1;
-  setTimeout(() => {
-    toast.style.opacity = 0;
-    toast.style.top = '14px';
+  if (!milestoneToast) return;
+  milestoneToast.textContent = 'Halfway done, keep going!';
+  milestoneToast.style.opacity = 1;
+  if (milestoneToastTimeout) clearTimeout(milestoneToastTimeout);
+  milestoneToastTimeout = setTimeout(() => {
+    milestoneToast.style.opacity = 0;
+    milestoneToastTimeout = null;
   }, 5000);
 }
 
@@ -418,15 +419,9 @@ function updateBestTimeDisplay(){
   const easyEl = document.getElementById('bestEasy');
   const normalEl = document.getElementById('bestNormal');
   const hardEl = document.getElementById('bestHard');
-  const easyOverEl = document.getElementById('bestEasyOver');
-  const normalOverEl = document.getElementById('bestNormalOver');
-  const hardOverEl = document.getElementById('bestHardOver');
   if (easyEl) easyEl.textContent = bestTimes.easy != null ? bestTimes.easy.toFixed(2) + 's' : '--';
   if (normalEl) normalEl.textContent = bestTimes.normal != null ? bestTimes.normal.toFixed(2) + 's' : '--';
   if (hardEl) hardEl.textContent = bestTimes.hard != null ? bestTimes.hard.toFixed(2) + 's' : '--';
-  if (easyOverEl) easyOverEl.textContent = bestTimes.easy != null ? bestTimes.easy.toFixed(2) + 's' : '--';
-  if (normalOverEl) normalOverEl.textContent = bestTimes.normal != null ? bestTimes.normal.toFixed(2) + 's' : '--';
-  if (hardOverEl) hardOverEl.textContent = bestTimes.hard != null ? bestTimes.hard.toFixed(2) + 's' : '--';
 }
 
 /* Assets */
@@ -962,6 +957,14 @@ function resetGame(){
   camY = 0;
   lastTs = 0;
   upHeld = downHeld = leftHeld = rightHeld = false;
+  halfWayToastShown = false;
+  if (milestoneToast){
+    milestoneToast.style.opacity = 0;
+  }
+  if (milestoneToastTimeout){
+    clearTimeout(milestoneToastTimeout);
+    milestoneToastTimeout = null;
+  }
 
   setHudTime(0);
   setHudJugs(0);
