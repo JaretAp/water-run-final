@@ -16,6 +16,7 @@ const btnStart     = document.getElementById('btnStart');
 const btnReset     = document.getElementById('btnReset');
 const btnPlayAgain = document.getElementById('btnPlayAgain');
 const btnResetInGame = document.getElementById('btnResetInGame');
+const btnBackToMenu = document.getElementById('btnBackToMenu');
 
 const finalTimeEl  = document.getElementById('finalTime');
 const toast        = document.getElementById('toast');
@@ -284,6 +285,9 @@ const hazards   = [];
 const obstacles = [];
 let jugCount    = 0;
 
+let halfWayToastShown = false;
+
+
 const BEST_TIMES_KEY = 'water-run-best-times-v1';
 let bestTimes = loadBestTimes();
 
@@ -383,6 +387,18 @@ function showScreen(el){
   if (el === screenGame) difficultyLocked = true;
   if (el === screenStart || el === screenOver) difficultyLocked = false;
 }
+function showHalfwayToast(){
+  if (!toast) return;
+  toast.textContent = 'Halfway done, keep going!';
+  toast.style.color = '#fff';
+  toast.style.top = '60px';
+  toast.style.opacity = 1;
+  setTimeout(() => {
+    toast.style.opacity = 0;
+    toast.style.top = '14px';
+  }, 5000);
+}
+
 function flash(text, color){
   if (!toast) return;
   toast.textContent = text;
@@ -402,9 +418,15 @@ function updateBestTimeDisplay(){
   const easyEl = document.getElementById('bestEasy');
   const normalEl = document.getElementById('bestNormal');
   const hardEl = document.getElementById('bestHard');
+  const easyOverEl = document.getElementById('bestEasyOver');
+  const normalOverEl = document.getElementById('bestNormalOver');
+  const hardOverEl = document.getElementById('bestHardOver');
   if (easyEl) easyEl.textContent = bestTimes.easy != null ? bestTimes.easy.toFixed(2) + 's' : '--';
   if (normalEl) normalEl.textContent = bestTimes.normal != null ? bestTimes.normal.toFixed(2) + 's' : '--';
   if (hardEl) hardEl.textContent = bestTimes.hard != null ? bestTimes.hard.toFixed(2) + 's' : '--';
+  if (easyOverEl) easyOverEl.textContent = bestTimes.easy != null ? bestTimes.easy.toFixed(2) + 's' : '--';
+  if (normalOverEl) normalOverEl.textContent = bestTimes.normal != null ? bestTimes.normal.toFixed(2) + 's' : '--';
+  if (hardOverEl) hardOverEl.textContent = bestTimes.hard != null ? bestTimes.hard.toFixed(2) + 's' : '--';
 }
 
 /* Assets */
@@ -985,9 +1007,15 @@ function finish(){
   playing = false;
   const timeRounded = (Math.round(elapsed*100)/100);
   if (finalTimeEl) finalTimeEl.textContent = timeRounded.toFixed(2);
-  maybeUpdateBestTime(timeRounded);
+  const newRecord = maybeUpdateBestTime(timeRounded);
+  updateBestTimeDisplay();
   playSound(SOUND_FINISH);
   showScreen(screenOver);
+  const congrats = document.getElementById('finishCongrats');
+  congrats && congrats.classList.toggle('hidden', !newRecord);
+  if (newRecord) {
+    congrats && congrats.classList.remove('hidden');
+  }
   celebrate();
 }
 
@@ -995,11 +1023,13 @@ function finish(){
 function maybeUpdateBestTime(timeSeconds){
   const key = difficulty || 'normal';
   const current = bestTimes[key];
-  if (current == null || timeSeconds < current){
+  const isBetter = current == null || timeSeconds < current;
+  if (isBetter){
     bestTimes[key] = timeSeconds;
     saveBestTimes();
     updateBestTimeDisplay();
   }
+  return isBetter;
 }
 
 function resetBestTimes(){
@@ -1099,6 +1129,11 @@ function loop(ts){
 
   drawRunner();
 
+  if (!halfWayToastShown && runnerY >= TRACK_LEN * 0.5){
+    halfWayToastShown = true;
+    showHalfwayToast();
+  }
+
   if (runnerY >= TRACK_LEN){ finish(); return; }
   if (playing) requestAnimationFrame(loop);
 }
@@ -1182,6 +1217,10 @@ downZone && downZone.addEventListener('touchcancel',(e) => { holdEnd('down');   
 btnStart     && btnStart.addEventListener('click', startGame);
 btnPlayAgain && btnPlayAgain.addEventListener('click', startGame);
 btnReset     && btnReset.addEventListener('click', () => {
+  resetGame();
+  showScreen(screenStart);
+});
+btnBackToMenu && btnBackToMenu.addEventListener('click', () => {
   resetGame();
   showScreen(screenStart);
 });

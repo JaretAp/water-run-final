@@ -12,8 +12,8 @@
   --hud-light:    #A7D0EE;
   --error-red:    #FF585D;
 
-  --font-display: "Inter", "Segoe UI", system-ui, sans-serif;
-  --font-body:    "Inter", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-body:    "Montserrat", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
 
   --radius-lg: 16px;
   --radius-sm: 12px;
@@ -65,36 +65,57 @@ body{
   margin:0 0 18px;
 }
 .difficulty-picker{
+  position:relative;
   border:2px solid rgba(12,14,15,0.35);
   border-radius:var(--radius-lg);
-  padding:1rem 1.25rem;
+  padding:2.4rem 1.4rem 1.25rem;
   display:flex;
   flex-wrap:wrap;
   justify-content:center;
-  gap:0.8rem 1.2rem;
-  background:rgba(12,14,15,0.15);
+  gap:0.85rem 1.4rem;
+  background:rgba(12,14,15,0.22);
   color:#fff;
 }
 .difficulty-picker legend{
   width:100%;
+  margin:0;
+  position:relative;
+  top:22px;
+  padding:0;
   text-transform:uppercase;
   letter-spacing:0.08em;
-  font-size:0.85rem;
-  font-weight:800;
-  margin-bottom:0.2rem;
-  color:var(--hud-light);
+  font-size:1.18rem;
+  font-weight:700;
+  color:var(--yellow-jug);
+  text-align:center;
+  font-family:inherit;
 }
 .difficulty-option{
   display:flex;
   align-items:center;
-  gap:0.35rem;
+  gap:0.55rem;
   font-weight:700;
   color:#fff;
+  padding:0.55rem 0.85rem;
+  border:1px solid rgba(255,216,77,0.45);
+  border-radius:999px;
+  background:rgba(8,12,18,0.55);
+  transition:background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.difficulty-option:hover{
+  background:rgba(255,216,77,0.22);
+  border-color:rgba(255,216,77,0.7);
+  transform:translateY(-1px);
 }
 .difficulty-option input{
-  width:1rem;
-  height:1rem;
+  width:1.15rem;
+  height:1.15rem;
   accent-color:var(--yellow-jug);
+  flex-shrink:0;
+}
+.difficulty-option span{
+  font-size:1rem;
+  letter-spacing:0.02em;
 }
 
 /* Buttons */
@@ -281,7 +302,33 @@ body{
 }
 
 .site-footer{margin-top:auto;background:rgba(12,14,15,0.08);padding:18px 16px;}
-.site-footer .footer-inner{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;font-family:'Montserrat','Inter','Segoe UI',sans-serif;font-weight:700;}
+.site-footer .footer-inner{display:flex;justify-content:center;align-items:center;gap:20px;flex-wrap:wrap;font-family:'Montserrat','Segoe UI','Helvetica Neue',Arial,sans-serif;font-weight:700;}
 .site-footer a{color:var(--black-accent);text-decoration:none;letter-spacing:.02em;}
 .site-footer a:hover{text-decoration:underline;}
 
+.finish-congrats{
+  color:var(--cw-yellow);
+  text-shadow:0 1px 2px rgba(0,0,0,.35);
+}
+
+.best-times{
+  background:linear-gradient(180deg, rgba(8,12,18,.92), rgba(8,12,18,.78));
+  border:2px solid rgba(255,216,77,0.45);
+  box-shadow:0 10px 24px rgba(0,0,0,0.38);
+  color:var(--yellow-jug);
+}
+.best-times-title{
+  color:var(--yellow-jug);
+  text-shadow:0 1px 2px rgba(0,0,0,0.45);
+}
+.best-times-grid{
+  background:rgba(20,28,40,0.32);
+}
+.best-times-item,
+.best-times-item strong{
+  color:var(--yellow-jug);
+  text-shadow:0 1px 2px rgba(0,0,0,0.4);
+}
+.best-times-over{
+  max-width:420px;
+}
